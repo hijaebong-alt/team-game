@@ -118,7 +118,7 @@ function render(soft){
  if(soft&&key===lastKey&&S.phase==='lobby'){const l=$('#pl');if(l){l.innerHTML=plistH();$('#pn').textContent=players.length}return}
  lastKey=key;if(stopGame){stopGame();stopGame=null}
  const g=gm(ord[S.gi]);
- let h='<div class="mu">방 '+code+' · v6'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
+ let h='<div class="mu">방 '+code+' · v7'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
  if(S.phase==='lobby'){
   h+='<h1>대기실</h1>';
   if(host){
@@ -129,9 +129,10 @@ function render(soft){
    h+='<div class="card host"><h2>팀 설정</h2><div class="row">'+[2,3,4].map(n=>'<button data-n="'+n+'" class="'+(S.n===n?'p':'')+'">'+n+'팀</button>').join('')+'</div><button class="w" id="as">무작위 팀 배정 / 다시 섞기</button></div>';
    const sel=ord.filter(id=>GAMES.some(x=>x.id===id)),rest=GAMES.filter(x=>!ord.includes(x.id));
    const sb='style="flex:0 0 auto;padding:8px 12px"';
-   h+='<div class="card host"><h2>게임 순서 ('+sel.length+'개 선택)</h2>'+(GAMES.length?'':'<p class="mu">게임 목록을 불러오는 중…</p>')
-    +sel.map((id,i)=>'<div class="row" style="align-items:center;margin:6px 0;flex-wrap:nowrap"><span style="width:26px;font-weight:700">'+(i+1)+'</span><span style="flex:1"><b>'+esc(gm(id).name)+'</b></span><button data-mv="'+i+',-1" '+sb+(i?'':' disabled')+'>▲</button><button data-mv="'+i+',1" '+sb+(i===sel.length-1?' disabled':'')+'>▼</button><button data-rm="'+id+'" '+sb+'>✕</button></div>').join('')
-    +(rest.length?'<h2 style="margin-top:14px">빠진 게임</h2>'+rest.map(x=>'<div class="row" style="align-items:center;margin:6px 0;flex-wrap:nowrap"><span style="flex:1">'+esc(x.name)+'</span><button data-ad="'+x.id+'" '+sb+'>+ 추가</button></div>').join(''):'')
+   const rowH=(id,i,btn)=>'<div class="row" data-id="'+id+'" style="align-items:center;margin:6px 0;flex-wrap:nowrap;padding:6px;border:1px solid var(--bd);border-radius:10px;background:var(--card)"><span class="dh" style="cursor:grab;touch-action:none;padding:4px 8px;font-size:20px;color:var(--mu)">☰</span><span class="no" style="width:24px;font-weight:700">'+i+'</span><span style="flex:1"><b>'+esc(gm(id).name)+'</b></span>'+btn+'</div>';
+   h+='<div class="card host" style="user-select:none"><h2>게임 순서 ('+sel.length+'개 선택)</h2><p class="mu" style="margin:0 0 6px">☰ 을 잡고 끌어서 순서를 바꾸세요. 아래 칸에서 끌어 올리면 추가됩니다.</p>'+(GAMES.length?'':'<p class="mu">게임 목록을 불러오는 중…</p>')
+    +'<div id="sl" style="min-height:48px;border:2px dashed var(--bd);border-radius:12px;padding:4px">'+sel.map((id,i)=>rowH(id,i+1,'<button data-rm="'+id+'" '+sb+'>✕</button>')).join('')+'</div>'
+    +'<h2 style="margin-top:14px">빠진 게임</h2><div id="rl" style="min-height:48px;border:2px dashed var(--bd);border-radius:12px;padding:4px">'+rest.map(x=>rowH(x.id,'–','<button data-ad="'+x.id+'" '+sb+'>+ 추가</button>')).join('')+'</div>'
     +'<div class="row" style="margin-top:10px"><button id="shf">🔀 섞기</button><button id="all">전체 선택</button><button id="non">전체 해제</button></div>'
     +'<button class="p w" id="go" '+(nTeamed()&&ord.length?'':'disabled')+'>게임 시작</button></div>';
   }else h+='<p class="mu">진행자가 시작하기를 기다리는 중…</p>';
@@ -158,7 +159,21 @@ function bind(host){
  if(host&&S.phase==='lobby'&&$('#qr')&&window.QRCode){new QRCode($('#qr'),{text:SHARE+'#r'+code,width:200,height:200,correctLevel:QRCode.CorrectLevel.M})}
  document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>upd({n:+b.dataset.n,teams:{}}));
  const O=()=>(S.order||[]).slice();
- document.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{const [i,d]=b.dataset.mv.split(',').map(Number),a=O(),j=i+d;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];upd({order:a})});
+ const sl=$('#sl'),rl=$('#rl');
+ const renum=()=>{if(sl)[...sl.querySelectorAll('[data-id]')].forEach((r,i)=>r.querySelector('.no').textContent=i+1);if(rl)[...rl.querySelectorAll('[data-id]')].forEach(r=>r.querySelector('.no').textContent='–')};
+ document.querySelectorAll('.dh').forEach(h=>h.onpointerdown=e=>{
+  e.preventDefault();const row=h.closest('[data-id]');row.style.opacity='.5';
+  const mv=ev=>{
+   const y=ev.clientY,x=ev.clientX;
+   const over=el=>{const r=el.getBoundingClientRect();return y>=r.top-24&&y<=r.bottom+24&&x>=r.left-24&&x<=r.right+24};
+   const tgt=over(sl)?sl:(over(rl)?rl:null);if(!tgt)return;
+   let before=null;for(const r of [...tgt.querySelectorAll('[data-id]')].filter(z=>z!==row)){const bb=r.getBoundingClientRect();if(y<bb.top+bb.height/2){before=r;break}}
+   tgt.insertBefore(row,before);renum();
+  };
+  const up=()=>{window.removeEventListener('pointermove',mv);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
+   row.style.opacity='';upd({order:[...sl.querySelectorAll('[data-id]')].map(z=>z.dataset.id)})};
+  window.addEventListener('pointermove',mv);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
+ });
  document.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>upd({order:O().filter(x=>x!==b.dataset.rm)}));
  document.querySelectorAll('[data-ad]').forEach(b=>b.onclick=()=>upd({order:O().concat(b.dataset.ad)}));
  on_('#shf',()=>upd({order:O().sort(()=>Math.random()-.5)}));
