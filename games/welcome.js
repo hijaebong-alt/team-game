@@ -1,7 +1,9 @@
 /* 환영하기: 진행자 화면의 박자에 맞춰 스마트폰을 크게 좌우로 흔들어 진행자를 환영하는 게임 */
+(function(){
+const NOW=()=>typeof serverNow==='function'?serverNow():Date.now();
 registerGame({
  id:'welcome',
- order:0,                      // 0: 게임 목록의 맨 앞
+ order:0.5,                    // 숫자가 작을수록 목록 앞쪽 (이 게임이 맨 앞)
  name:'환영하기',
  desc:'진행자 화면의 손이 좌우로 움직이는 박자에 맞춰, 스마트폰을 세로로 잡고 크게 좌우로 흔드세요. 손이 맨 끝에 닿는 순간 폰도 한쪽 끝에서 방향이 바뀌게 흔들면 박자가 맞습니다. 박자에 딱 맞으면 2점, 조금 어긋나면 1점입니다. (24박자 · 높을수록 좋음)',
  hi:true,
@@ -9,9 +11,10 @@ registerGame({
 
  /* ---- 진행자 화면: 환영 손짓과 박자 ---- */
  host(c){
+  if(!c.onResults){c.el.innerHTML='<p style="color:#e24b4a">index.html이 예전 버전입니다. 최신 index.html을 올린 뒤 Ctrl+F5로 새로고침하세요.</p>';return}
   const BPM=84,BEATS=24,PRE=10,T=60000/BPM;     // 박자 속도, 박자 수, 시작 전 준비(초)
   const COL=['#e24b4a','#378add','#c98f00','#2f9e55'],TN=['빨강','파랑','노랑','초록'];
-  const t0=serverNow()+PRE*1000;
+  const t0=NOW()+PRE*1000;
   c.set({t0,T,beats:BEATS});
   c.el.innerHTML='<div style="text-align:center">'
    +'<div style="font-size:30px;font-weight:800" id="bn">환영합니다!</div>'
@@ -32,7 +35,7 @@ registerGame({
   });
   let lastBeat=-1,done=false;
   c.every(()=>{
-   const tt=serverNow()-t0,hd=q('#hd'),bc=q('#bc');if(!hd)return;
+   const tt=NOW()-t0,hd=q('#hd'),bc=q('#bc');if(!hd)return;
    if(tt<0){bc.textContent=Math.ceil(-tt/1000);hd.style.left='50%';hd.style.transform='translateX(-50%)';return}
    if(tt>BEATS*T+T/2){
     if(!done){done=true;c.set({t0,T,beats:BEATS,done:true});hd.textContent='🎉';hd.style.left='50%';hd.style.transform='translateX(-50%)';bc.textContent='환영 끝!';q('#bn').textContent='감사합니다!'}
@@ -70,7 +73,7 @@ registerGame({
    /* 안내용 손 움직임 + 종료 확인 */
    c.every(()=>{
     if(!g||!g.t0)return;
-    const tt=serverNow()-g.t0,hd=$('#hd'),st=$('#st'),bt=$('#bt');if(!hd)return;
+    const tt=NOW()-g.t0,hd=$('#hd'),st=$('#st'),bt=$('#bt');if(!hd)return;
     if(tt<0){if(st)st.textContent=Math.ceil(-tt/1000)+'초 뒤 시작! 폰을 세로로 잡으세요';hd.style.transform='';return}
     if(st)st.textContent='크게 좌우로 흔드세요!';
     hd.style.transform='translateX('+(-Math.cos(Math.PI*tt/g.T)*60)+'px) rotate('+(-Math.cos(Math.PI*tt/g.T)*25)+'deg)';
@@ -79,7 +82,7 @@ registerGame({
    },33);
    /* 센서: 좌우 가속도의 큰 봉우리 = 흔들림이 방향을 바꾸는 순간 */
    let lp=null,p1=null,p2=null,lastPeak=0,got=false;
-   const useTouch=()=>{const pd=$('#pd');if(pd){pd.style.display='flex';pd.onpointerdown=e=>{e.preventDefault();credit(serverNow())}}};
+   const useTouch=()=>{const pd=$('#pd');if(pd){pd.style.display='flex';pd.onpointerdown=e=>{e.preventDefault();credit(NOW())}}};
    if(!ok){useTouch();return}
    c.listen('devicemotion',e=>{
     let ax;const a=e.acceleration,gr=e.accelerationIncludingGravity;
@@ -87,7 +90,7 @@ registerGame({
     else if(gr&&gr.x!=null){if(lp==null)lp=gr.x;lp=lp*.8+gr.x*.2;ax=gr.x-lp}
     else return;
     got=true;
-    const cur={m:Math.abs(ax),t:serverNow()};
+    const cur={m:Math.abs(ax),t:NOW()};
     if(p1&&p2&&p1.m>=p2.m&&p1.m>cur.m&&p1.m>3&&p1.t-lastPeak>MINGAP){
      lastPeak=p1.t;
      if(p1.m>=BIG)credit(p1.t);else say('더 크게!');
@@ -98,3 +101,4 @@ registerGame({
   });
  }
 });
+})();
