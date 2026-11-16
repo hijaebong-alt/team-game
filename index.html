@@ -60,7 +60,7 @@ const SHARE=location.href.split('#')[0];
 const firebaseConfig={apiKey:"AIzaSyChkhADYeWt6yo6t-hzgqkgABz6o5hIhTU",authDomain:"team-game-d27ac.firebaseapp.com",projectId:"team-game-d27ac",storageBucket:"team-game-d27ac.firebasestorage.app",messagingSenderId:"545379954707",appId:"1:545379954707:web:a73e5e50c4d0b4da254fe6"};
 const COL=[['빨강','#e24b4a'],['파랑','#378add'],['노랑','#c98f00'],['초록','#2f9e55']];
 const app=document.getElementById('app');
-let db,uid,code=null,S=null,players=[],results=[],lastKey='',myName='',played={},stopGame=null,subs=[];
+let dataCb=null,db,uid,code=null,S=null,players=[],results=[],lastKey='',myName='',played={},stopGame=null,subs=[];
 try{myName=localStorage.getItem('tg_name')||''}catch(e){}
 const gm=id=>GAMES.find(g=>g.id===id)||{id,name:id+' (불러오기 실패)',desc:'게임 파일을 불러오지 못했습니다.',hi:true,fmt:v=>v,run(c){c.ga.innerHTML='<p>이 게임을 불러오지 못했습니다. 진행자에게 알려 주세요.</p>'}};
 const esc=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML};
@@ -105,7 +105,7 @@ function render(soft){
  if(!S)return;
  const host=S.host===uid,my=S.teams[uid],ord=S.order||GAMES.map(g=>g.id);
  const key=[S.phase,S.gi,S.gs,S.n,S.rd,my,ord.join('|')].join();
- if(soft&&key===lastKey&&S.gs==='play'){const c=$('#cnt');if(c)c.textContent=curResults().length+' / '+nTeamed();return}
+ if(key===lastKey&&S.gs==='play'){if(dataCb)dataCb(S.g);const c=$('#cnt');if(c)c.textContent=curResults().length+' / '+nTeamed();return}
  if(soft&&key===lastKey&&S.phase==='lobby'){const l=$('#pl');if(l){l.innerHTML=plistH();$('#pn').textContent=players.length}return}
  lastKey=key;if(stopGame){stopGame();stopGame=null}
  const g=gm(ord[S.gi]);
@@ -123,7 +123,7 @@ function render(soft){
  }else if(S.phase==='game'){
   h+='<h1>'+(S.gi+1)+'/'+ord.length+' '+g.name+'</h1>';
   if(S.gs==='intro'){h+='<div class="card"><p>'+g.desc+'</p></div>'+(host?'<button class="p w" id="st">게임 시작</button>':'<p class="mu">진행자가 시작하기를 기다리는 중…</p>')}
-  else if(S.gs==='play'){h+=host?'<div class="card host"><p>참가자들이 게임 중입니다.</p><p class="mu">제출 <b id="cnt">'+curResults().length+' / '+nTeamed()+'</b></p><button class="p w" id="fin">결과 공개</button></div>':'<div class="card" id="ga"></div>'}
+  else if(S.gs==='play'){h+=host?'<div class="card host"><p>참가자들이 게임 중입니다.</p><div id="hg"></div><p class="mu">제출 <b id="cnt">'+curResults().length+' / '+nTeamed()+'</b></p><button class="p w" id="fin">결과 공개</button></div>':'<div class="card" id="ga"></div>'}
   else{const a=S['h'+S.gi]||{avg:[],add:[]};
    h+='<div class="card"><table><tr><th>팀</th><th>평균</th><th>획득</th><th>누적</th></tr>'+Array.from({length:S.n},(_,i)=>'<tr><td>'+tagH(i)+'</td><td>'+(a.avg[i]>=0?g.fmt(a.avg[i]):'-')+'</td><td>+'+(a.add[i]||0)+'</td><td><b>'+S.pts[i]+'</b></td></tr>').join('')+'</table></div>';
    const mine=curResults().find(r=>r.uid===uid);if(mine)h+='<p class="mu">내 기록: '+g.fmt(mine.v)+'</p>';
@@ -145,13 +145,14 @@ function bind(host){
  const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
  on('#as',()=>{const ids=players.map(p=>p.id).sort(()=>Math.random()-.5),t={};ids.forEach((id,i)=>t[id]=i%S.n);upd({teams:t})});
  on('#go',()=>upd({phase:'game',gi:0,gs:'intro'}));
- on('#st',()=>upd({gs:'play'}));
+ on('#st',()=>upd({gs:'play',g:null}));
  on('#fin',finish);
  on('#sk',()=>{if(confirm('이 게임을 점수 없이 건너뛸까요?'))S.gi+1<S.order.length?upd({gi:S.gi+1,gs:'intro'}):upd({phase:'final'})});
  on('#en',()=>{if(confirm('게임을 종료하고 최종 결과를 볼까요?'))upd({phase:'final'})});
  on('#nx',()=>S.gi+1<S.order.length?upd({gi:S.gi+1,gs:'intro'}):upd({phase:'final'}));
  on('#rs',()=>upd({phase:'lobby',gi:0,gs:'intro',rd:S.rd+1,pts:[0,0,0,0],teams:{}}));
  if(!host&&S.phase==='game'&&S.gs==='play')runGame();
+ if(host&&S.phase==='game'&&S.gs==='play')runHost();
 }
 function finish(){
  const g=gm(S.order[S.gi]),rs=curResults(),avg=[],add=[],pts=S.pts.slice();
@@ -160,12 +161,19 @@ function finish(){
  rk.forEach((t,r)=>{add[t]=S.n-r;pts[t]+=add[t]});
  upd({gs:'result',pts,['h'+S.gi]:{avg,add}});
 }
+function runHost(){
+ const g=gm(S.order[S.gi]),el=$('#hg');if(!el||!g.host)return;
+ let timers=[];stopGame=()=>timers.forEach(t=>{clearTimeout(t);clearInterval(t)});
+ g.host({el,set:v=>upd({g:v}),
+  every:(f,ms)=>{const t=setInterval(f,ms);timers.push(t);return t},
+  after:(f,ms)=>{const t=setTimeout(f,ms);timers.push(t);return t}});
+}
 function runGame(){
  const ga=$('#ga'),g=gm(S.order[S.gi]),pk=S.rd+'_'+S.gi,gi=S.gi,rd=S.rd,team=S.teams[uid];
  if(team==null){ga.innerHTML='<p>팀이 없어 이번 게임은 관전합니다.</p>';return}
  if(played[pk]){ga.innerHTML='<p class="big">제출 완료 ✓</p>';return}
  let timers=[],cl=[];const stop=()=>{timers.forEach(t=>{clearTimeout(t);clearInterval(t)});cl.forEach(f=>f());cl=[]};stopGame=stop;
- g.run({ga,stop,listen:(t,f)=>{window.addEventListener(t,f);cl.push(()=>window.removeEventListener(t,f))},
+ g.run({ga,stop,live:v=>{db.doc('rooms/'+code+'/results/'+pk+'_'+uid).set({rd,gi,uid,team,v})},watch:f=>{dataCb=f;cl.push(()=>{dataCb=null});f(S.g)},listen:(t,f)=>{window.addEventListener(t,f);cl.push(()=>window.removeEventListener(t,f))},
   ready:cb=>{ga.innerHTML='<p>'+g.desc+'</p><button class="p w" id="rd">준비됐어요 (누르면 시작)</button>';$('#rd').onclick=cb},
   every:(f,ms)=>{const t=setInterval(f,ms);timers.push(t);return t},
   after:(f,ms)=>{const t=setTimeout(f,ms);timers.push(t);return t},
