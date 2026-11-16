@@ -13,6 +13,9 @@
    c.listen(이벤트,f) window 이벤트 등록 (게임이 끝나면 자동 해제)
    c.stop()      타이머·이벤트 정리
    c.submit(값)  기록 제출 (게임당 1번). 이 값이 점수 계산에 쓰입니다.
+ 진행자 화면과 연동하는 게임(예: watermelon.js)은 아래를 추가로 씁니다.
+   host(c)     진행자 화면에 그림을 그리는 함수. c.el(영역), c.set(값)(참가자에게 전달), c.every, c.after
+   c.watch(fn) (참가자) 진행자가 보낸 값을 받는 함수.  c.live(값) 진행 중 기록을 미리 저장
  공용 도구: $('#id'), askMotion('motion'|'orient'), shakeGame(...)
 */
 registerGame({
