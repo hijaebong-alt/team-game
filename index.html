@@ -36,7 +36,7 @@ label.g{display:flex;gap:8px;align-items:flex-start;padding:6px 0}
 /* ===== 게임 로더: 게임은 games/ 폴더의 개별 파일(.js)로 추가합니다 ===== */
 const GAMES=[],loaded={};
 function registerGame(g){const i=GAMES.findIndex(x=>x.id===g.id);if(i>=0)GAMES[i]=g;else GAMES.push(g);
- GAMES.sort((a,b)=>(a.order||999)-(b.order||999)||a.name.localeCompare(b.name,'ko'))}
+ GAMES.sort((a,b)=>(a.order==null?999:a.order)-(b.order==null?999:b.order)||a.name.localeCompare(b.name,'ko'))}
 function loadGame(id){return loaded[id]||(loaded[id]=new Promise(res=>{const el=document.createElement('script');el.src='games/'+id+'.js?v='+Date.now();el.onload=()=>res(true);el.onerror=()=>res(false);document.head.appendChild(el)}))}
 async function listGameIds(){
  const set=new Set();const m=location.hostname.match(/^(.+)\.github\.io$/),repo=location.pathname.split('/')[1];
