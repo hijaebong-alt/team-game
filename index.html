@@ -118,7 +118,7 @@ function render(soft){
  if(soft&&key===lastKey&&S.phase==='lobby'){const l=$('#pl');if(l){l.innerHTML=plistH();$('#pn').textContent=players.length}return}
  lastKey=key;if(stopGame){stopGame();stopGame=null}
  const g=gm(ord[S.gi]);
- let h='<div class="mu">방 '+code+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
+ let h='<div class="mu">방 '+code+' · v5'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
  if(S.phase==='lobby'){
   h+='<h1>대기실</h1>';
   if(host){
@@ -173,20 +173,22 @@ function finish(){
 function runHost(){
  const g=gm(S.order[S.gi]),el=$('#hg');if(!el||!g.host)return;
  let timers=[];stopGame=()=>{timers.forEach(t=>{clearTimeout(t);clearInterval(t)});resultsCb=null};
- g.host({el,n:S.n,players:players.map(p=>({id:p.id,name:p.name,team:S.teams[p.id]})),onResults:f=>{resultsCb=f;f(curResults())},set:v=>upd({g:v}),
+ try{g.host({el,n:S.n,players:players.map(p=>({id:p.id,name:p.name,team:S.teams[p.id]})),onResults:f=>{resultsCb=f;f(curResults())},set:v=>upd({g:v}),
   every:(f,ms)=>{const t=setInterval(f,ms);timers.push(t);return t},
   after:(f,ms)=>{const t=setTimeout(f,ms);timers.push(t);return t}});
+ }catch(e){el.innerHTML='<p style="color:#e24b4a">진행자 화면 오류: '+esc(String(e&&e.message||e))+'</p>'}
 }
 function runGame(){
  const ga=$('#ga'),g=gm(S.order[S.gi]),pk=S.rd+'_'+S.gi,gi=S.gi,rd=S.rd,team=S.teams[uid];
  if(team==null){ga.innerHTML='<p>팀이 없어 이번 게임은 관전합니다.</p>';return}
  if(played[pk]){ga.innerHTML='<p class="big">제출 완료 ✓</p>';return}
  let timers=[],cl=[];const stop=()=>{timers.forEach(t=>{clearTimeout(t);clearInterval(t)});cl.forEach(f=>f());cl=[]};stopGame=stop;
- g.run({ga,stop,uid,team,live:(v,x)=>{db.doc('rooms/'+code+'/results/'+pk+'_'+uid).set(Object.assign({rd,gi,uid,team,v},x||{}))},watch:f=>{dataCb=f;cl.push(()=>{dataCb=null});f(S.g)},listen:(t,f)=>{window.addEventListener(t,f);cl.push(()=>window.removeEventListener(t,f))},
+ try{g.run({ga,stop,uid,team,live:(v,x)=>{db.doc('rooms/'+code+'/results/'+pk+'_'+uid).set(Object.assign({rd,gi,uid,team,v},x||{}))},watch:f=>{dataCb=f;cl.push(()=>{dataCb=null});f(S.g)},listen:(t,f)=>{window.addEventListener(t,f);cl.push(()=>window.removeEventListener(t,f))},
   ready:cb=>{ga.innerHTML='<p>'+g.desc+'</p><button class="p w" id="rd">준비됐어요 (누르면 시작)</button>';$('#rd').onclick=cb},
   every:(f,ms)=>{const t=setInterval(f,ms);timers.push(t);return t},
   after:(f,ms)=>{const t=setTimeout(f,ms);timers.push(t);return t},
   submit:v=>{played[pk]=1;db.doc('rooms/'+code+'/results/'+pk+'_'+uid).set({rd,gi,uid,team,v});
    ga.innerHTML='<p class="big">제출 완료 ✓</p><p class="mu" style="text-align:center">기록: '+g.fmt(v)+'<br>다른 참가자를 기다리는 중…</p>'}});
+ }catch(e){ga.innerHTML='<p style="color:#e24b4a">게임 오류: '+esc(String(e&&e.message||e))+'</p>'}
 }
 </script></body></html>
