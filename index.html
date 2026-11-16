@@ -118,7 +118,7 @@ function render(soft){
  if(soft&&key===lastKey&&S.phase==='lobby'){const l=$('#pl');if(l){l.innerHTML=plistH();$('#pn').textContent=players.length}return}
  lastKey=key;if(stopGame){stopGame();stopGame=null}
  const g=gm(ord[S.gi]);
- let h='<div class="mu">방 '+code+' · v5'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
+ let h='<div class="mu">방 '+code+' · v6'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
  if(S.phase==='lobby'){
   h+='<h1>대기실</h1>';
   if(host){
@@ -127,7 +127,13 @@ function render(soft){
   h+='<div class="card"><h2>참가자 <span id="pn">'+players.length+'</span>명</h2><div id="pl">'+plistH()+'</div></div>';
   if(host){
    h+='<div class="card host"><h2>팀 설정</h2><div class="row">'+[2,3,4].map(n=>'<button data-n="'+n+'" class="'+(S.n===n?'p':'')+'">'+n+'팀</button>').join('')+'</div><button class="w" id="as">무작위 팀 배정 / 다시 섞기</button></div>';
-   h+='<div class="card host"><h2>이번에 할 게임 ('+GAMES.length+'종)</h2>'+(GAMES.length?'':'<p class="mu">게임 목록을 불러오는 중…</p>')+GAMES.map(x=>'<label class="g"><input type="checkbox" data-g="'+x.id+'" '+(ord.includes(x.id)?'checked':'')+'><span><b>'+x.name+'</b><br><span class="mu">'+x.desc+'</span></span></label>').join('')+'<button class="p w" id="go" '+(nTeamed()&&ord.length?'':'disabled')+'>게임 시작</button></div>';
+   const sel=ord.filter(id=>GAMES.some(x=>x.id===id)),rest=GAMES.filter(x=>!ord.includes(x.id));
+   const sb='style="flex:0 0 auto;padding:8px 12px"';
+   h+='<div class="card host"><h2>게임 순서 ('+sel.length+'개 선택)</h2>'+(GAMES.length?'':'<p class="mu">게임 목록을 불러오는 중…</p>')
+    +sel.map((id,i)=>'<div class="row" style="align-items:center;margin:6px 0;flex-wrap:nowrap"><span style="width:26px;font-weight:700">'+(i+1)+'</span><span style="flex:1"><b>'+esc(gm(id).name)+'</b></span><button data-mv="'+i+',-1" '+sb+(i?'':' disabled')+'>▲</button><button data-mv="'+i+',1" '+sb+(i===sel.length-1?' disabled':'')+'>▼</button><button data-rm="'+id+'" '+sb+'>✕</button></div>').join('')
+    +(rest.length?'<h2 style="margin-top:14px">빠진 게임</h2>'+rest.map(x=>'<div class="row" style="align-items:center;margin:6px 0;flex-wrap:nowrap"><span style="flex:1">'+esc(x.name)+'</span><button data-ad="'+x.id+'" '+sb+'>+ 추가</button></div>').join(''):'')
+    +'<div class="row" style="margin-top:10px"><button id="shf">🔀 섞기</button><button id="all">전체 선택</button><button id="non">전체 해제</button></div>'
+    +'<button class="p w" id="go" '+(nTeamed()&&ord.length?'':'disabled')+'>게임 시작</button></div>';
   }else h+='<p class="mu">진행자가 시작하기를 기다리는 중…</p>';
  }else if(S.phase==='game'){
   h+='<h1>'+(S.gi+1)+'/'+ord.length+' '+g.name+'</h1>';
@@ -148,9 +154,16 @@ function render(soft){
 }
 function plistH(){return players.map(p=>'<span class="tag" style="background:'+(S.teams[p.id]!=null?COL[S.teams[p.id]][1]:'#888')+'">'+esc(p.name)+'</span>').join('')||'<span class="mu">아직 없음</span>'}
 function bind(host){
+ const on_=(id,f)=>{const e=document.querySelector(id);if(e)e.onclick=f};
  if(host&&S.phase==='lobby'&&$('#qr')&&window.QRCode){new QRCode($('#qr'),{text:SHARE+'#r'+code,width:200,height:200,correctLevel:QRCode.CorrectLevel.M})}
  document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>upd({n:+b.dataset.n,teams:{}}));
- document.querySelectorAll('[data-g]').forEach(b=>b.onchange=()=>{const on=[...document.querySelectorAll('[data-g]')].filter(x=>x.checked).map(x=>x.dataset.g);upd({order:GAMES.map(g=>g.id).filter(id=>on.includes(id))})});
+ const O=()=>(S.order||[]).slice();
+ document.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{const [i,d]=b.dataset.mv.split(',').map(Number),a=O(),j=i+d;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];upd({order:a})});
+ document.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>upd({order:O().filter(x=>x!==b.dataset.rm)}));
+ document.querySelectorAll('[data-ad]').forEach(b=>b.onclick=()=>upd({order:O().concat(b.dataset.ad)}));
+ on_('#shf',()=>upd({order:O().sort(()=>Math.random()-.5)}));
+ on_('#all',()=>{const a=O();GAMES.forEach(x=>{if(!a.includes(x.id))a.push(x.id)});upd({order:a})});
+ on_('#non',()=>upd({order:[]}));
  const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
  on('#as',()=>{const ids=players.map(p=>p.id).sort(()=>Math.random()-.5),t={};ids.forEach((id,i)=>t[id]=i%S.n);upd({teams:t})});
  on('#go',()=>upd({phase:'game',gi:0,gs:'intro'}));
