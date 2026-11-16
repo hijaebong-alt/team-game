@@ -91,8 +91,17 @@ function playerEntry(c){
   myName=n;try{localStorage.setItem('tg_name',n)}catch(e){}
   await db.doc('rooms/'+c+'/players/'+uid).set({name:n});openRoom(c,false)};
 }
+let clockOff=0;
+function serverNow(){return Date.now()+clockOff}   // 서버 기준 현재 시각(ms): 기기 시계 차이 보정
+async function calibrate(ref,field){
+ try{const a=[];
+  for(let i=0;i<3;i++){const t1=Date.now();await ref.update({[field]:firebase.firestore.FieldValue.serverTimestamp()});
+   const sn=await ref.get({source:'server'});const t2=Date.now();const d=sn.data()[field];if(d)a.push(d.toMillis()-(t1+t2)/2)}
+  if(a.length){a.sort((x,y)=>x-y);clockOff=a[a.length>>1]}}catch(e){}
+}
 function openRoom(c,isHost){
  code=c;if(isHost){try{localStorage.setItem('tg_host',c)}catch(e){}}
+ calibrate(isHost?db.doc('rooms/'+c):db.doc('rooms/'+c+'/players/'+uid),isHost?'hts':'ts');
  if(isHost)loadCatalog().then(()=>render());
  subs.push(db.doc('rooms/'+c).onSnapshot(s=>{S=s.data();Promise.all((S.order||[]).map(loadGame)).then(()=>render())},()=>{}));
  subs.push(db.collection('rooms/'+c+'/players').onSnapshot(q=>{players=q.docs.map(d=>({id:d.id,...d.data()}));render(true)},()=>{}));
