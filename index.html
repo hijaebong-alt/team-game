@@ -27,6 +27,21 @@ table{width:100%;border-collapse:collapse}td,th{padding:8px 4px;border-bottom:1p
 .host{border-left:4px solid var(--pr)}
 label.g{display:flex;gap:8px;align-items:flex-start;padding:6px 0}
 .badge{font-size:12px;background:var(--pr);color:var(--prt);border-radius:6px;padding:1px 6px;margin-left:6px}
+
+.hl,.pg{display:block}
+body.pc #app{max-width:1280px;padding:24px 36px}
+body.pc h1{font-size:34px}body.pc h2{font-size:20px}
+body.pc .card{padding:22px}
+body.pc .code{font-size:60px}
+body.pc .intro{font-size:26px;line-height:1.7}
+body.pc table{font-size:22px}body.pc td,body.pc th{padding:12px 8px}
+body.pc .big{font-size:56px}
+body.pc button{font-size:18px}
+body.pc .hl{display:grid;grid-template-columns:minmax(340px,1fr) 1.3fr;gap:24px;align-items:start}
+body.pc .pg{display:grid;grid-template-columns:1fr 300px;gap:24px;align-items:start}
+body.pc #hg{zoom:1.5}
+body.pc #hg .big{font-size:40px}
+@media (max-width:900px){body.pc .hl,body.pc .pg{display:block}body.pc #hg{zoom:1}}
 </style></head><body><div id="app"><p class="mu">연결 중…</p></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -116,16 +131,18 @@ function render(soft){
  const key=[S.phase,S.gi,S.gs,S.n,S.rd,my,ord.join('|')].join();
  if(key===lastKey&&S.gs==='play'){if(dataCb)dataCb(S.g);const c=$('#cnt');if(c)c.textContent=curResults().length+' / '+nTeamed();return}
  if(soft&&key===lastKey&&S.phase==='lobby'){const l=$('#pl');if(l){l.innerHTML=plistH();$('#pn').textContent=players.length}return}
- lastKey=key;if(stopGame){stopGame();stopGame=null}
+ lastKey=key;document.body.classList.toggle('pc',host);if(stopGame){stopGame();stopGame=null}
  const g=gm(ord[S.gi]);
- let h='<div class="mu">방 '+code+' · v7'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
+ const menuH=(host&&S.phase==='game')?'<div class="card host"><p class="mu" style="margin:0 0 8px">진행자 메뉴</p><div class="row">'+(S.gs!=='result'?'<button id="sk">⏭ 이 게임 건너뛰기</button>':'')+'<button id="en">■ 게임 종료</button></div></div>':'';
+ let h='<div class="mu">방 '+code+' · v8'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
  if(S.phase==='lobby'){
-  h+='<h1>대기실</h1>';
+  h+='<h1>대기실</h1>'+(host?'<div class="hl"><div>':'');
   if(host){
-   h+='<div class="card host" style="text-align:center"><div class="qr" id="qr"></div><div class="code">'+code+'</div><p class="mu">참가자는 스마트폰 카메라로 QR을 찍어 입장합니다</p></div>';
+   h+='<div class="card host" style="text-align:center"><div class="qr" id="qr"></div><div class="code">'+code+'</div><p class="mu">참가자는 스마트폰 카메라로 QR을 찍어 입장합니다</p><p class="mu" style="word-break:break-all">'+SHARE+'#r'+code+'</p></div>';
   }else h+='<div class="card"><p>내 팀: '+tagH(my)+'</p></div>';
   h+='<div class="card"><h2>참가자 <span id="pn">'+players.length+'</span>명</h2><div id="pl">'+plistH()+'</div></div>';
   if(host){
+   h+='</div><div>';
    h+='<div class="card host"><h2>팀 설정</h2><div class="row">'+[2,3,4].map(n=>'<button data-n="'+n+'" class="'+(S.n===n?'p':'')+'">'+n+'팀</button>').join('')+'</div><button class="w" id="as">무작위 팀 배정 / 다시 섞기</button></div>';
    const sel=ord.filter(id=>GAMES.some(x=>x.id===id)),rest=GAMES.filter(x=>!ord.includes(x.id));
    const sb='style="flex:0 0 auto;padding:8px 12px"';
@@ -134,12 +151,12 @@ function render(soft){
     +'<div id="sl" style="min-height:48px;border:2px dashed var(--bd);border-radius:12px;padding:4px">'+sel.map((id,i)=>rowH(id,i+1,'<button data-rm="'+id+'" '+sb+'>✕</button>')).join('')+'</div>'
     +'<h2 style="margin-top:14px">빠진 게임</h2><div id="rl" style="min-height:48px;border:2px dashed var(--bd);border-radius:12px;padding:4px">'+rest.map(x=>rowH(x.id,'–','<button data-ad="'+x.id+'" '+sb+'>+ 추가</button>')).join('')+'</div>'
     +'<div class="row" style="margin-top:10px"><button id="shf">🔀 섞기</button><button id="all">전체 선택</button><button id="non">전체 해제</button></div>'
-    +'<button class="p w" id="go" '+(nTeamed()&&ord.length?'':'disabled')+'>게임 시작</button></div>';
+    +'<button class="p w" id="go" '+(nTeamed()&&ord.length?'':'disabled')+'>게임 시작</button></div></div></div>';
   }else h+='<p class="mu">진행자가 시작하기를 기다리는 중…</p>';
  }else if(S.phase==='game'){
   h+='<h1>'+(S.gi+1)+'/'+ord.length+' '+g.name+'</h1>';
-  if(S.gs==='intro'){h+='<div class="card"><p>'+g.desc+'</p></div>'+(host?'<button class="p w" id="st">게임 시작</button>':'<p class="mu">진행자가 시작하기를 기다리는 중…</p>')}
-  else if(S.gs==='play'){h+=host?'<div class="card host"><p>참가자들이 게임 중입니다.</p><div id="hg"></div><p class="mu">제출 <b id="cnt">'+curResults().length+' / '+nTeamed()+'</b></p><button class="p w" id="fin">결과 공개</button></div>':'<div class="card" id="ga"></div>'}
+  if(S.gs==='intro'){h+='<div class="card"><p class="intro">'+g.desc+'</p></div>'+(host?'<button class="p w" id="st">게임 시작</button>':'<p class="mu">진행자가 시작하기를 기다리는 중…</p>')}
+  else if(S.gs==='play'){h+=host?'<div class="pg"><div class="card host" style="min-height:300px"><div id="hg">'+(g.host?'':'<p class="intro">'+g.desc+'</p><p class="mu">이 게임은 진행자 화면에 따로 표시되는 그림이 없습니다.</p>')+'</div></div><div><div class="card host"><p style="margin:0">참가자들이 게임 중입니다.</p><p class="mu">제출 <b id="cnt" style="font-size:22px">'+curResults().length+' / '+nTeamed()+'</b></p><button class="p w" id="fin">결과 공개</button></div>'+menuH+'</div></div>':'<div class="card" id="ga"></div>'}
   else{const a=S['h'+S.gi]||{avg:[],add:[]};
    h+='<div class="card"><table><tr><th>팀</th><th>평균</th><th>획득</th><th>누적</th></tr>'+Array.from({length:S.n},(_,i)=>'<tr><td>'+tagH(i)+'</td><td>'+(a.avg[i]>=0?g.fmt(a.avg[i]):'-')+'</td><td>+'+(a.add[i]||0)+'</td><td><b>'+S.pts[i]+'</b></td></tr>').join('')+'</table></div>';
    const mine=curResults().find(r=>r.uid===uid);if(mine)h+='<p class="mu">내 기록: '+g.fmt(mine.v)+'</p>';
@@ -150,13 +167,13 @@ function render(soft){
   h+='<div class="card"><h2>게임별 점수</h2><table>'+ord.map((id,gi)=>{const a=S['h'+gi];return '<tr><td>'+gm(id).name+'</td><td class="mu">'+(a?a.add.slice(0,S.n).map((p,i)=>COL[i][0]+' +'+p).join(' · '):'-')+'</td></tr>'}).join('')+'</table></div>';
   if(host)h+='<button class="w" id="rs">점수 초기화 후 다시 하기</button>';
  }
- if(host&&S.phase==='game')h+='<div class="card host"><p class="mu" style="margin:0 0 8px">진행자 메뉴</p><div class="row">'+(S.gs!=='result'?'<button id="sk">⏭ 이 게임 건너뛰기</button>':'')+'<button id="en">■ 게임 종료</button></div></div>';
+ if(host&&S.phase==='game'&&S.gs!=='play')h+=menuH;
  app.innerHTML=h;bind(host);
 }
 function plistH(){return players.map(p=>'<span class="tag" style="background:'+(S.teams[p.id]!=null?COL[S.teams[p.id]][1]:'#888')+'">'+esc(p.name)+'</span>').join('')||'<span class="mu">아직 없음</span>'}
 function bind(host){
  const on_=(id,f)=>{const e=document.querySelector(id);if(e)e.onclick=f};
- if(host&&S.phase==='lobby'&&$('#qr')&&window.QRCode){new QRCode($('#qr'),{text:SHARE+'#r'+code,width:200,height:200,correctLevel:QRCode.CorrectLevel.M})}
+ if(host&&S.phase==='lobby'&&$('#qr')&&window.QRCode){new QRCode($('#qr'),{text:SHARE+'#r'+code,width:260,height:260,correctLevel:QRCode.CorrectLevel.M})}
  document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>upd({n:+b.dataset.n,teams:{}}));
  const O=()=>(S.order||[]).slice();
  const sl=$('#sl'),rl=$('#rl');
