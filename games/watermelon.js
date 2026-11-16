@@ -38,7 +38,7 @@ registerGame({
 
  /* ---- 참가자 화면: 스마트폰을 같은 방향으로 휘두르기 (센서가 안 되면 화면 긋기로 대체) ---- */
  run(c){
-  const THR=7;                               // 휘두름으로 인정되는 가속도(m/s²). 너무 민감하면 올리세요
+  const THR=5;                               // 휘두름으로 인정되는 가속도(m/s²). 너무 민감하면 올리세요
   c.ready(async()=>{
    const ok=await askMotion('motion');
    let n=0,dir=-1,cur=-1,counted=-1,done=false,mode='';
