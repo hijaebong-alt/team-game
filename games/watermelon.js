@@ -38,7 +38,7 @@ registerGame({
 
  /* ---- 참가자 화면: 스마트폰을 같은 방향으로 휘두르기 (센서가 안 되면 화면 긋기로 대체) ---- */
  run(c){
-  const THR=3.5,PEAK=5,TOL=35;               // THR 움직임 시작 기준, PEAK 최소 세기(m/s²), TOL 방향 허용 오차(도). 너무 민감하면 THR·PEAK를 올리세요
+  const THR=2.5,PEAK=3.5,TOL=40;               // THR 움직임 시작 기준, PEAK 최소 세기(m/s²), TOL 방향 허용 오차(도). 너무 민감하면 THR·PEAK를 올리세요
   const TARGET=[0,90,135,45],NAMES=['가로 ↔','세로 ↕','대각선 ↘','대각선 ↗'];  // 기기 좌표 기준(위쪽이 +y)
   c.ready(async()=>{
    const ok=await askMotion('motion');
@@ -68,7 +68,7 @@ registerGame({
     frame('<div id="pad" style="height:240px;border-radius:16px;background:var(--bg);border:2px dashed var(--bd);display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;color:var(--mu)">센서를 쓸 수 없어요 · 여기에 쓱 그으세요</div>');
     const pad=$('#pad');let sx=0,sy=0,down=false;
     pad.onpointerdown=e=>{e.preventDefault();down=true;sx=e.clientX;sy=e.clientY;try{pad.setPointerCapture(e.pointerId)}catch(x){}};
-    pad.onpointerup=e=>{if(!down)return;down=false;const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.hypot(dx,dy)<60)return;
+    pad.onpointerup=e=>{if(!down)return;down=false;const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.hypot(dx,dy)<30)return;
      const o=((Math.atan2(dy,dx)*180/Math.PI)%180+180)%180;
      judge((180-o)%180)};
     pad.onpointercancel=()=>{down=false};
@@ -80,7 +80,7 @@ registerGame({
    let lp=null,warm=0,active=false,sxx=0,syy=0,sxy=0,peak=0,t0=0,low=0,cool=0;
    const finish=(timeout)=>{
     active=false;const now=performance.now();cool=now+450;
-    if(timeout||peak<PEAK)return;
+    if(peak<PEAK)return;      // 시간이 오래 걸린 동작도 그대로 판정
     const th=0.5*Math.atan2(2*sxy,sxx-syy)*180/Math.PI,o=((th%180)+180)%180;
     judge(o);
    };
@@ -96,8 +96,8 @@ registerGame({
     if(!active&&m>THR){active=true;sxx=syy=sxy=0;peak=0;t0=now;low=0}
     if(active){
      sxx+=ax*ax;syy+=ay*ay;sxy+=ax*ay;peak=Math.max(peak,m);
-     if(m<THR*.5){if(!low)low=now;if(now-low>100)finish(false)}else low=0;
-     if(now-t0>1300)finish(true);
+     if(m<THR*.6){if(!low)low=now;if(now-low>80)finish(false)}else low=0;
+     if(now-t0>1000)finish(true);
     }
    });
    c.after(()=>{if(!mode)buildTouch()},1500);
