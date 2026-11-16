@@ -38,16 +38,20 @@ registerGame({
 
  /* ---- 참가자 화면: 스마트폰을 같은 방향으로 휘두르기 (센서가 안 되면 화면 긋기로 대체) ---- */
  run(c){
-  const THR=1;                               // 휘두름으로 인정되는 가속도(m/s²). 너무 민감하면 올리세요
+  const THR=3.5,PEAK=5,TOL=35;               // THR 움직임 시작 기준, PEAK 최소 세기(m/s²), TOL 방향 허용 오차(도). 너무 민감하면 THR·PEAK를 올리세요
+  const TARGET=[0,90,135,45],NAMES=['가로 ↔','세로 ↕','대각선 ↘','대각선 ↗'];  // 기기 좌표 기준(위쪽이 +y)
   c.ready(async()=>{
    const ok=await askMotion('motion');
    let n=0,dir=-1,cur=-1,counted=-1,done=false,mode='';
    c.live(0);
    const say=t=>{const f=$('#fb');if(f){f.textContent=t;c.after(()=>{const g=$('#fb');if(g)g.textContent=''},700)}};
-   const judge=k=>{
+   const judge=o=>{
     if(done)return;
     if(dir<0){say('아직이에요');return}
-    if(k===dir&&counted!==cur){counted=cur;n++;const e=$('#sc');if(e)e.textContent=n;c.live(n);say('✔ 잘랐어요! +1');try{navigator.vibrate(60)}catch(x){}}
+    const df=Math.abs(o-TARGET[Math.max(dir,0)]),dd=Math.min(df,180-df);
+    const near=TARGET.map(t=>{const x=Math.abs(o-t);return Math.min(x,180-x)}),nk=near.indexOf(Math.min(...near));
+    const dbg=$('#dbg');if(dbg)dbg.textContent='인식된 방향: '+NAMES[nk];
+    if(dd<=TOL&&counted!==cur){counted=cur;n++;const e=$('#sc');if(e)e.textContent=n;c.live(n);say('✔ 잘랐어요! +1');try{navigator.vibrate(60)}catch(x){}}
     else if(counted===cur)say('이미 잘랐어요');
     else say('✘ 방향이 달라요');
    };
@@ -66,35 +70,34 @@ registerGame({
     pad.onpointerdown=e=>{e.preventDefault();down=true;sx=e.clientX;sy=e.clientY;try{pad.setPointerCapture(e.pointerId)}catch(x){}};
     pad.onpointerup=e=>{if(!down)return;down=false;const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.hypot(dx,dy)<60)return;
      const o=((Math.atan2(dy,dx)*180/Math.PI)%180+180)%180;
-     judge(o<22.5||o>=157.5?0:o<67.5?2:o<112.5?1:3)};
+     judge((180-o)%180)};
     pad.onpointercancel=()=>{down=false};
    };
    /* 스마트폰 휘두르기 */
-   const buildMotion=()=>{mode='motion';frame('<div style="height:220px;display:flex;align-items:center;justify-content:center;font-size:72px">📱</div><p class="mu" style="text-align:center">폰을 세로로 잡고 같은 방향으로 휘두르세요</p>')};
+   const buildMotion=()=>{mode='motion';frame('<div style="height:220px;display:flex;align-items:center;justify-content:center;font-size:72px">📱</div><div style="height:10px;background:var(--bd);border-radius:6px;margin:8px 0"><div id="lv" style="height:100%;width:0;background:var(--pr);border-radius:6px"></div></div><p class="mu" id="dbg" style="text-align:center">인식된 방향: -</p><p class="mu" style="text-align:center">폰을 세로로 잡고 같은 방향으로 휘두르세요</p>')};
    if(!ok){buildTouch();return}
    c.ga.innerHTML='<p class="mu">움직임 센서 확인 중…</p>';
    let lp=null,warm=0,active=false,sxx=0,syy=0,sxy=0,peak=0,t0=0,low=0,cool=0;
    const finish=(timeout)=>{
     active=false;const now=performance.now();cool=now+450;
-    if(timeout||peak<THR*1.3)return;
+    if(timeout||peak<PEAK)return;
     const th=0.5*Math.atan2(2*sxy,sxx-syy)*180/Math.PI,o=((th%180)+180)%180;
-    // 기기 좌표(y는 위쪽): 45°는 ↗, 135°는 ↘
-    judge(o<22.5||o>=157.5?0:o<67.5?3:o<112.5?1:2);
+    judge(o);
    };
    c.listen('devicemotion',e=>{
     let ax,ay;const a=e.acceleration,g=e.accelerationIncludingGravity;
-    if(a&&a.x!=null&&a.y!=null){ax=a.x;ay=a.y}
-    else if(g&&g.x!=null){if(!lp)lp={x:g.x,y:g.y};lp.x=lp.x*.9+g.x*.1;lp.y=lp.y*.9+g.y*.1;ax=g.x-lp.x;ay=g.y-lp.y}
+    if(a&&a.x!=null&&a.y!=null&&(a.x!==0||a.y!==0||(a.z||0)!==0)){ax=a.x;ay=a.y}
+    else if(g&&g.x!=null){if(!lp)lp={x:g.x,y:g.y};lp.x=lp.x*.8+g.x*.2;lp.y=lp.y*.8+g.y*.2;ax=g.x-lp.x;ay=g.y-lp.y}
     else return;
     if(!mode)buildMotion();
     if(mode!=='motion'||done||++warm<15)return;
     const now=performance.now();if(now<cool)return;
-    const m=Math.hypot(ax,ay);
+    const m=Math.hypot(ax,ay);const lv=$('#lv');if(lv)lv.style.width=Math.min(100,m/(THR*3)*100)+'%';
     if(!active&&m>THR){active=true;sxx=syy=sxy=0;peak=0;t0=now;low=0}
     if(active){
      sxx+=ax*ax;syy+=ay*ay;sxy+=ax*ay;peak=Math.max(peak,m);
-     if(m<THR/2){if(!low)low=now;if(now-low>120)finish(false)}else low=0;
-     if(now-t0>900)finish(true);
+     if(m<THR*.5){if(!low)low=now;if(now-low>100)finish(false)}else low=0;
+     if(now-t0>1300)finish(true);
     }
    });
    c.after(()=>{if(!mode)buildTouch()},1500);
