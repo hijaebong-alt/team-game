@@ -99,6 +99,20 @@ function hostEntry(){
  $('#jn').onclick=()=>{const c=$('#cd').value.trim();if(c)playerEntry(c)};
 }
 /* ---------- 참가자 입구 ---------- */
+const INTRO_SEC=14;   // 오프닝 재생 시간(초). 노래 전체(약 66초)를 들려주려면 66으로 바꾸세요
+function startIntro(title,onEnd){
+ const au=new Audio('intro/opening.mp3');
+ try{const p=au.play();if(p&&p.catch)p.catch(()=>{})}catch(e){}
+ const ov=document.createElement('div');
+ ov.style.cssText='position:fixed;inset:0;z-index:9999;background:#03060f;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:24px;text-align:center;transition:opacity .8s';
+ ov.innerHTML='<img src="intro/opening.gif" alt="" style="max-width:90vw;max-height:68vh;border-radius:14px"><div style="font-size:34px;font-weight:800">'+esc(title)+'</div><div style="width:min(520px,80vw);height:8px;background:#ffffff33;border-radius:4px"><div id="ipb" style="height:100%;width:0;background:#5b8cff;border-radius:4px"></div></div><button id="isk" style="background:#ffffff22;color:#fff;border:1px solid #ffffff55">바로 시작 ▶</button>';
+ document.body.appendChild(ov);
+ let done=false,iv=0;const t0=Date.now();
+ const fade=()=>{let v=au.volume;const f=setInterval(()=>{v-=.1;if(v<=0){clearInterval(f);au.pause()}else au.volume=v},60)};
+ const end=()=>{if(done)return;done=true;clearInterval(iv);ov.style.opacity='0';setTimeout(()=>ov.remove(),800);fade();if(onEnd)onEnd()};
+ iv=setInterval(()=>{const p=Math.min(1,(Date.now()-t0)/(INTRO_SEC*1000));const b=ov.querySelector('#ipb');if(b)b.style.width=(p*100)+'%';if(p>=1||au.ended)end()},100);
+ ov.querySelector('#isk').onclick=end;
+}
 function playerEntry(c){
  app.innerHTML='<h1>팀 미니게임</h1><p class="mu">방 코드 <b>'+c+'</b></p><div class="card"><input id="nm" placeholder="이름 또는 닉네임" maxlength="12" value="'+esc(myName)+'"><button class="p w" id="jn">입장하기</button></div><p id="err" class="mu"></p>';
  $('#jn').onclick=async()=>{const n=$('#nm').value.trim();if(!n){$('#err').textContent='이름을 입력해 주세요.';return}
@@ -134,7 +148,7 @@ function render(soft){
  lastKey=key;document.body.classList.toggle('pc',host);if(stopGame){stopGame();stopGame=null}
  const g=gm(ord[S.gi]);
  const menuH=(host&&S.phase==='game')?'<div class="card host"><p class="mu" style="margin:0 0 8px">진행자 메뉴</p><div class="row">'+(S.gs!=='result'?'<button id="sk">⏭ 이 게임 건너뛰기</button>':'')+'<button id="en">■ 게임 종료</button></div></div>':'';
- let h='<div class="mu">방 '+code+' · v8'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
+ let h='<div class="mu">방 '+code+' · v10'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
  if(S.phase==='lobby'){
   h+='<h1>대기실</h1>'+(host?'<div class="hl"><div>':'');
   if(host){
@@ -173,6 +187,7 @@ function render(soft){
 function plistH(){return players.map(p=>'<span class="tag" style="background:'+(S.teams[p.id]!=null?COL[S.teams[p.id]][1]:'#888')+'">'+esc(p.name)+'</span>').join('')||'<span class="mu">아직 없음</span>'}
 function bind(host){
  const on_=(id,f)=>{const e=document.querySelector(id);if(e)e.onclick=f};
+ if(host&&S.phase==='lobby'){try{const pa=new Audio();pa.preload='auto';pa.src='intro/opening.mp3';new Image().src='intro/opening.gif'}catch(e){}}
  if(host&&S.phase==='lobby'&&$('#qr')&&window.QRCode){new QRCode($('#qr'),{text:SHARE+'#r'+code,width:260,height:260,correctLevel:QRCode.CorrectLevel.M})}
  document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>upd({n:+b.dataset.n,teams:{}}));
  const O=()=>(S.order||[]).slice();
@@ -198,7 +213,7 @@ function bind(host){
  on_('#non',()=>upd({order:[]}));
  const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
  on('#as',()=>{const ids=players.map(p=>p.id).sort(()=>Math.random()-.5),t={};ids.forEach((id,i)=>t[id]=i%S.n);upd({teams:t})});
- on('#go',()=>upd({phase:'game',gi:0,gs:'intro'}));
+ on('#go',()=>{const b=$('#go');if(b)b.disabled=true;startIntro('게임을 시작합니다!',()=>upd({phase:'game',gi:0,gs:'intro'}))});
  on('#st',()=>upd({gs:'play',g:null}));
  on('#fin',finish);
  on('#sk',()=>{if(confirm('이 게임을 점수 없이 건너뛸까요?'))S.gi+1<S.order.length?upd({gi:S.gi+1,gs:'intro'}):upd({phase:'final'})});
