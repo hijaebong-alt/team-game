@@ -62,13 +62,14 @@ async function loadCatalog(){const ids=await listGameIds();await Promise.all(ids
 /* ===== 게임 파일이 쓰는 공용 도구 ===== */
 async function askMotion(kind){const E=kind==='orient'?window.DeviceOrientationEvent:window.DeviceMotionEvent;if(!E)return false;if(typeof E.requestPermission==='function'){try{return (await E.requestPermission())==='granted'}catch(e){return false}}return true}
 function shakeGame(id,name,axis,lab,desc,labs){return{id,name,desc,hi:true,fmt:v=>v+'회',
- run(c){c.ready(async()=>{const ok=await askMotion('motion');let n=0,last=0,lt=0,started=false;
+ run(c){c.ready(async()=>{const ok=await askMotion('motion');let n=0,last=0,lt=0,ll=0,started=false;
+  const lv=()=>{const t=performance.now();if(t-ll>400){ll=t;c.live(n)}};   // 진행자 화면 비교용: 0.4초에 한 번만 현재 기록 전송
   const run=m=>{started=true;const fb=m==='touch';
    c.ga.innerHTML='<p class="big" id="tl">10</p><p class="big" id="sc">0</p>'+(fb?'<div class="row"><button id="b0" style="height:120px;font-size:22px">'+labs[0]+'</button><button id="b1" style="height:120px;font-size:22px">'+labs[1]+'</button></div>':'<p class="mu" style="text-align:center">스마트폰을 '+lab+'로 흔드세요</p>');
-   if(fb){let lb=-1;[0,1].forEach(i=>{$('#b'+i).onpointerdown=e=>{e.preventDefault();if(i!==lb){lb=i;n++;$('#sc').textContent=n}}})}
+   if(fb){let lb=-1;[0,1].forEach(i=>{$('#b'+i).onpointerdown=e=>{e.preventDefault();if(i!==lb){lb=i;n++;$('#sc').textContent=n;lv()}}})}
    let left=10;c.every(()=>{left--;$('#tl').textContent=left;if(left<=0){c.stop();c.submit(n)}},1000)};
   if(ok){c.ga.innerHTML='<p class="mu">움직임 센서 확인 중…</p>';
-   c.listen('devicemotion',e=>{const a=e.accelerationIncludingGravity;if(!a||a[axis]==null)return;const v=a[axis];if(!started){last=v;run('motion');return}const now=performance.now();if(Math.abs(v-last)>10&&now-lt>110){n++;lt=now;const el=$('#sc');if(el)el.textContent=n}last=v});
+   c.listen('devicemotion',e=>{const a=e.accelerationIncludingGravity;if(!a||a[axis]==null)return;const v=a[axis];if(!started){last=v;run('motion');return}const now=performance.now();if(Math.abs(v-last)>10&&now-lt>110){n++;lt=now;lv();const el=$('#sc');if(el)el.textContent=n}last=v});
    c.after(()=>{if(!started)run('touch')},1300)}else run('touch')})}}}
 /* ================================================================== */
 const SHARE=location.href.split('#')[0];
@@ -148,7 +149,7 @@ function render(soft){
  lastKey=key;document.body.classList.toggle('pc',host);if(stopGame){stopGame();stopGame=null}
  const g=gm(ord[S.gi]);
  const menuH=(host&&S.phase==='game')?'<div class="card host"><p class="mu" style="margin:0 0 8px">진행자 메뉴</p><div class="row">'+(S.gs!=='result'?'<button id="sk">⏭ 이 게임 건너뛰기</button>':'')+'<button id="en">■ 게임 종료</button></div></div>':'';
- let h='<div class="mu">방 '+code+' · v10'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
+ let h='<div class="mu">방 '+code+' · v11'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
  if(S.phase==='lobby'){
   h+='<h1>대기실</h1>'+(host?'<div class="hl"><div>':'');
   if(host){
