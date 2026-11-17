@@ -138,18 +138,19 @@ function openRoom(c,isHost){
  subs.push(db.collection('rooms/'+c+'/results').onSnapshot(q=>{results=q.docs.map(d=>d.data());if(resultsCb&&S)resultsCb(curResults());render(true)},()=>{}));
 }
 const upd=o=>db.doc('rooms/'+code).update(o);
-const curResults=()=>results.filter(r=>r.rd===S.rd&&r.gi===S.gi);
+const curResults=()=>results.filter(r=>r.rd===S.rd&&r.gi===S.gi&&(r.at||0)===(S.at||0));
+const pracOn=id=>!(S&&S.prac&&S.prac[id]===false);   // 시범 게임 사용 여부(기본: 사용)
 const nTeamed=()=>Object.keys(S.teams).length;
 function render(soft){
  if(!S)return;
  const host=S.host===uid,my=S.teams[uid],ord=S.order||GAMES.map(g=>g.id);
- const key=[S.phase,S.gi,S.gs,S.n,S.rd,my,ord.join('|')].join();
+ const key=[S.phase,S.gi,S.gs,S.n,S.rd,my,ord.join('|'),S.pm?1:0,S.at||0].join();
  if(key===lastKey&&S.gs==='play'){if(dataCb)dataCb(S.g);const c=$('#cnt');if(c)c.textContent=curResults().length+' / '+nTeamed();return}
  if(soft&&key===lastKey&&S.phase==='lobby'){const l=$('#pl');if(l){l.innerHTML=plistH();$('#pn').textContent=players.length}return}
  lastKey=key;document.body.classList.toggle('pc',host);if(stopGame){stopGame();stopGame=null}
  const g=gm(ord[S.gi]);
  const menuH=(host&&S.phase==='game')?'<div class="card host"><p class="mu" style="margin:0 0 8px">진행자 메뉴</p><div class="row">'+(S.gs!=='result'?'<button id="sk">⏭ 이 게임 건너뛰기</button>':'')+'<button id="en">■ 게임 종료</button></div></div>':'';
- let h='<div class="mu">방 '+code+' · v11'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
+ let h='<div class="mu">방 '+code+' · v12'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
  if(S.phase==='lobby'){
   h+='<h1>대기실</h1>'+(host?'<div class="hl"><div>':'');
   if(host){
@@ -163,15 +164,19 @@ function render(soft){
    const sb='style="flex:0 0 auto;padding:8px 12px"';
    const rowH=(id,i,btn)=>'<div class="row" data-id="'+id+'" style="align-items:center;margin:6px 0;flex-wrap:nowrap;padding:6px;border:1px solid var(--bd);border-radius:10px;background:var(--card)"><span class="dh" style="cursor:grab;touch-action:none;padding:4px 8px;font-size:20px;color:var(--mu)">☰</span><span class="no" style="width:24px;font-weight:700">'+i+'</span><span style="flex:1"><b>'+esc(gm(id).name)+'</b></span>'+btn+'</div>';
    h+='<div class="card host" style="user-select:none"><h2>게임 순서 ('+sel.length+'개 선택)</h2><p class="mu" style="margin:0 0 6px">☰ 을 잡고 끌어서 순서를 바꾸세요. 아래 칸에서 끌어 올리면 추가됩니다.</p>'+(GAMES.length?'':'<p class="mu">게임 목록을 불러오는 중…</p>')
-    +'<div id="sl" style="min-height:48px;border:2px dashed var(--bd);border-radius:12px;padding:4px">'+sel.map((id,i)=>rowH(id,i+1,'<button data-rm="'+id+'" '+sb+'>✕</button>')).join('')+'</div>'
+    +'<div id="sl" style="min-height:48px;border:2px dashed var(--bd);border-radius:12px;padding:4px">'+sel.map((id,i)=>rowH(id,i+1,'<label style="flex:0 0 auto;font-size:14px;white-space:nowrap;margin-right:6px"><input type="checkbox" data-pr="'+id+'" '+(pracOn(id)?'checked':'')+'> 시범</label><button data-rm="'+id+'" '+sb+'>✕</button>')).join('')+'</div>'
     +'<h2 style="margin-top:14px">빠진 게임</h2><div id="rl" style="min-height:48px;border:2px dashed var(--bd);border-radius:12px;padding:4px">'+rest.map(x=>rowH(x.id,'–','<button data-ad="'+x.id+'" '+sb+'>+ 추가</button>')).join('')+'</div>'
-    +'<div class="row" style="margin-top:10px"><button id="shf">🔀 섞기</button><button id="all">전체 선택</button><button id="non">전체 해제</button></div>'
+    +'<div class="row" style="margin-top:10px"><button id="shf">🔀 섞기</button><button id="all">전체 선택</button><button id="non">전체 해제</button></div><div class="row" style="margin-top:6px"><button id="pa">🧪 시범 모두 켜기</button><button id="pf">시범 모두 끄기</button></div><p class="mu" style="margin:6px 0 0">시범이 켜진 게임은 점수 없는 연습을 먼저 한 뒤 본 게임을 합니다.</p>'
     +'<button class="p w" id="go" '+(nTeamed()&&ord.length?'':'disabled')+'>게임 시작</button></div></div></div>';
   }else h+='<p class="mu">진행자가 시작하기를 기다리는 중…</p>';
  }else if(S.phase==='game'){
-  h+='<h1>'+(S.gi+1)+'/'+ord.length+' '+g.name+'</h1>';
-  if(S.gs==='intro'){h+='<div class="card"><p class="intro">'+g.desc+'</p></div>'+(host?'<button class="p w" id="st">게임 시작</button>':'<p class="mu">진행자가 시작하기를 기다리는 중…</p>')}
+  h+='<h1>'+(S.gi+1)+'/'+ord.length+' '+g.name+' '+(S.gs==='intro'?'':S.pm?'<span class="badge" style="background:#c98f00;font-size:15px">시범 · 점수 없음</span>':'<span class="badge" style="font-size:15px">본 게임</span>')+'</h1>';
+  if(S.gs==='intro'){h+='<div class="card"><p class="intro">'+g.desc+'</p></div>'+(host?(pracOn(ord[S.gi])?'<div class="row"><button class="p" id="sp">🧪 시범 게임 시작</button><button id="st">▶ 본 게임 바로 시작</button></div>':'<button class="p w" id="st">▶ 본 게임 시작</button>'):'<p class="mu">'+(pracOn(ord[S.gi])?'진행자가 시범 게임을 시작하기를 기다리는 중…':'진행자가 시작하기를 기다리는 중…')+'</p>')}
   else if(S.gs==='play'){h+=host?'<div class="pg"><div class="card host" style="min-height:300px"><div id="hg">'+(g.host?'':'<p class="intro">'+g.desc+'</p><p class="mu">이 게임은 진행자 화면에 따로 표시되는 그림이 없습니다.</p>')+'</div></div><div><div class="card host"><p style="margin:0">참가자들이 게임 중입니다.</p><p class="mu">제출 <b id="cnt" style="font-size:22px">'+curResults().length+' / '+nTeamed()+'</b></p><button class="p w" id="fin">결과 공개</button></div>'+menuH+'</div></div>':'<div class="card" id="ga"></div>'}
+  else if(S.pm){const a=S.pr||{avg:[]};
+   h+='<div class="card"><p class="mu" style="margin:0 0 6px">시범 결과 · 점수에 반영되지 않아요</p><table><tr><th>팀</th><th>평균</th></tr>'+Array.from({length:S.n},(_,i)=>'<tr><td>'+tagH(i)+'</td><td>'+(a.avg&&a.avg[i]>=0?g.fmt(a.avg[i]):'-')+'</td></tr>').join('')+'</table></div>';
+   const mine=curResults().find(r=>r.uid===uid);if(mine)h+='<p class="mu">내 기록: '+g.fmt(mine.v)+'</p>';
+   h+=host?'<div class="row"><button id="rp">🔁 시범 한 번 더</button><button class="p" id="mn">▶ 본 게임 시작</button></div>':'<p class="mu">진행자가 본 게임을 시작하기를 기다리는 중…</p>'}
   else{const a=S['h'+S.gi]||{avg:[],add:[]};
    h+='<div class="card"><table><tr><th>팀</th><th>평균</th><th>획득</th><th>누적</th></tr>'+Array.from({length:S.n},(_,i)=>'<tr><td>'+tagH(i)+'</td><td>'+(a.avg[i]>=0?g.fmt(a.avg[i]):'-')+'</td><td>+'+(a.add[i]||0)+'</td><td><b>'+S.pts[i]+'</b></td></tr>').join('')+'</table></div>';
    const mine=curResults().find(r=>r.uid===uid);if(mine)h+='<p class="mu">내 기록: '+g.fmt(mine.v)+'</p>';
@@ -214,19 +219,24 @@ function bind(host){
  on_('#non',()=>upd({order:[]}));
  const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
  on('#as',()=>{const ids=players.map(p=>p.id).sort(()=>Math.random()-.5),t={};ids.forEach((id,i)=>t[id]=i%S.n);upd({teams:t})});
- on('#go',()=>{const b=$('#go');if(b)b.disabled=true;startIntro('게임을 시작합니다!',()=>upd({phase:'game',gi:0,gs:'intro'}))});
- on('#st',()=>upd({gs:'play',g:null}));
+ on('#go',()=>{const b=$('#go');if(b)b.disabled=true;startIntro('게임을 시작합니다!',()=>upd({phase:'game',gi:0,gs:'intro',pm:false}))});
+ const goPlay=pm=>upd({gs:'play',g:null,pm,at:(S.at||0)+1});
+ on('#st',()=>goPlay(false));on('#sp',()=>goPlay(true));on('#rp',()=>goPlay(true));on('#mn',()=>goPlay(false));
+ document.querySelectorAll('[data-pr]').forEach(b=>b.onchange=()=>upd({['prac.'+b.dataset.pr]:b.checked}));
+ on_('#pa',()=>upd({prac:{}}));
+ on_('#pf',()=>{const o={};(S.order||[]).forEach(id=>o[id]=false);upd({prac:o})});
  on('#fin',finish);
- on('#sk',()=>{if(confirm('이 게임을 점수 없이 건너뛸까요?'))S.gi+1<S.order.length?upd({gi:S.gi+1,gs:'intro'}):upd({phase:'final'})});
+ on('#sk',()=>{if(confirm('이 게임을 점수 없이 건너뛸까요?'))S.gi+1<S.order.length?upd({gi:S.gi+1,gs:'intro',pm:false}):upd({phase:'final'})});
  on('#en',()=>{if(confirm('게임을 종료하고 최종 결과를 볼까요?'))upd({phase:'final'})});
- on('#nx',()=>S.gi+1<S.order.length?upd({gi:S.gi+1,gs:'intro'}):upd({phase:'final'}));
- on('#rs',()=>upd({phase:'lobby',gi:0,gs:'intro',rd:S.rd+1,pts:[0,0,0,0],teams:{}}));
+ on('#nx',()=>S.gi+1<S.order.length?upd({gi:S.gi+1,gs:'intro',pm:false}):upd({phase:'final'}));
+ on('#rs',()=>upd({phase:'lobby',gi:0,gs:'intro',pm:false,rd:S.rd+1,pts:[0,0,0,0],teams:{}}));
  if(!host&&S.phase==='game'&&S.gs==='play')runGame();
  if(host&&S.phase==='game'&&S.gs==='play')runHost();
 }
 function finish(){
  const g=gm(S.order[S.gi]),rs=curResults(),avg=[],add=[],pts=S.pts.slice();
  for(let i=0;i<S.n;i++){const v=rs.filter(r=>r.team===i).map(r=>r.v);avg[i]=v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):-1;add[i]=0}
+ if(S.pm){upd({gs:'result',pr:{avg}});return}      // 시범 게임: 점수에 반영하지 않음
  const rk=avg.map((a,i)=>i).filter(i=>avg[i]>=0).sort((a,b)=>g.hi?avg[b]-avg[a]:avg[a]-avg[b]);
  rk.forEach((t,r)=>{add[t]=S.n-r;pts[t]+=add[t]});
  upd({gs:'result',pts,['h'+S.gi]:{avg,add}});
@@ -240,15 +250,15 @@ function runHost(){
  }catch(e){el.innerHTML='<p style="color:#e24b4a">진행자 화면 오류: '+esc(String(e&&e.message||e))+'</p>'}
 }
 function runGame(){
- const ga=$('#ga'),g=gm(S.order[S.gi]),pk=S.rd+'_'+S.gi,gi=S.gi,rd=S.rd,team=S.teams[uid];
+ const ga=$('#ga'),g=gm(S.order[S.gi]),pk=S.rd+'_'+S.gi+'_'+(S.at||0),gi=S.gi,rd=S.rd,at=S.at||0,team=S.teams[uid];
  if(team==null){ga.innerHTML='<p>팀이 없어 이번 게임은 관전합니다.</p>';return}
  if(played[pk]){ga.innerHTML='<p class="big">제출 완료 ✓</p>';return}
  let timers=[],cl=[];const stop=()=>{timers.forEach(t=>{clearTimeout(t);clearInterval(t)});cl.forEach(f=>f());cl=[]};stopGame=stop;
- try{g.run({ga,stop,uid,team,live:(v,x)=>{db.doc('rooms/'+code+'/results/'+pk+'_'+uid).set(Object.assign({rd,gi,uid,team,v},x||{}))},watch:f=>{dataCb=f;cl.push(()=>{dataCb=null});f(S.g)},listen:(t,f)=>{window.addEventListener(t,f);cl.push(()=>window.removeEventListener(t,f))},
+ try{g.run({ga,stop,uid,team,live:(v,x)=>{db.doc('rooms/'+code+'/results/'+pk+'_'+uid).set(Object.assign({rd,gi,at,uid,team,v},x||{}))},watch:f=>{dataCb=f;cl.push(()=>{dataCb=null});f(S.g)},listen:(t,f)=>{window.addEventListener(t,f);cl.push(()=>window.removeEventListener(t,f))},
   ready:cb=>{ga.innerHTML='<p>'+g.desc+'</p><button class="p w" id="rd">준비됐어요 (누르면 시작)</button>';$('#rd').onclick=cb},
   every:(f,ms)=>{const t=setInterval(f,ms);timers.push(t);return t},
   after:(f,ms)=>{const t=setTimeout(f,ms);timers.push(t);return t},
-  submit:v=>{played[pk]=1;db.doc('rooms/'+code+'/results/'+pk+'_'+uid).set({rd,gi,uid,team,v});
+  submit:v=>{played[pk]=1;db.doc('rooms/'+code+'/results/'+pk+'_'+uid).set({rd,gi,at,uid,team,v});
    ga.innerHTML='<p class="big">제출 완료 ✓</p><p class="mu" style="text-align:center">기록: '+g.fmt(v)+'<br>다른 참가자를 기다리는 중…</p>'}});
  }catch(e){ga.innerHTML='<p style="color:#e24b4a">게임 오류: '+esc(String(e&&e.message||e))+'</p>'}
 }
