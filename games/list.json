@@ -6,6 +6,7 @@
  "react.js",
  "stop.js",
  "tap.js",
+ "mem.js",
  "dir.js",
  "bal.js",
  "luck.js",
@@ -14,5 +15,6 @@
  "money.js",
  "nickname.js",
  "tugofwar.js",
- "numinput.js"
+ "numinput.js",
+ "elevator.js"
 ]
