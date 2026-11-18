@@ -277,7 +277,7 @@ function runHost(){
   const scores=new Map(rs.filter(r=>typeof r.v==='number').map(r=>[r.uid,r.v]));
   const ranked=players.map(p=>({player:p,score:scores.has(p.id)?scores.get(p.id):null}));
   ranked.sort((a,b)=>{if(a.score==null&&b.score!=null)return 1;if(a.score!=null&&b.score==null)return -1;if(a.score!=null&&b.score!=null&&a.score!==b.score)return g.hi===false?a.score-b.score:b.score-a.score;return String(a.player.name).localeCompare(String(b.player.name),'ko')});
-  const shown=ranked.slice(0,20);let last=null,place=0;
+  const shown=ranked;let last=null,place=0;
   rankEl.innerHTML=shown.map((x,i)=>{
    const p=x.player,v=x.score;
    if(v!=null&&v!==last){place=i+1;last=v}
@@ -291,7 +291,6 @@ function runHost(){
     +'<span style="flex:1;min-width:0"><b style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.name)+'</b><span class="mu" style="font-size:12px">'+(team?team[0]+' 팀':'팀 없음')+'</span></span>'
     +'<b style="white-space:nowrap">'+score+'</b></div>';
   }).join('')||'<p class="mu">참가자가 없습니다.</p>';
-  if(ranked.length>20)rankEl.innerHTML+='<p class="mu" style="text-align:center">전체 '+ranked.length+'명 중 점수순 상위 20명 표시</p>';
  };
  const updateResults=rs=>{if(gameResults)gameResults(rs);drawRanking(rs)};
  stopGame=()=>{timers.forEach(t=>{clearTimeout(t);clearInterval(t)});resultsCb=null};
@@ -300,7 +299,7 @@ function runHost(){
   after:(f,ms)=>{const t=setTimeout(f,ms);timers.push(t);return t}});
  }catch(e){el.innerHTML='<p style="color:#e24b4a">진행자 화면 오류: '+esc(String(e&&e.message||e))+'</p>'}
  panel=document.createElement('section');panel.style.cssText='margin-top:18px;padding:14px;background:var(--card);border:1px solid var(--bd);border-radius:14px;text-align:left';
- panel.innerHTML='<h2 style="margin:0 0 4px">🏆 참가자 랭킹</h2><p class="mu" style="margin:0 0 8px">점수순 상위 20명 · 게임 기록에 따라 실시간 갱신</p><div></div>';
+ panel.innerHTML='<h2 style="margin:0 0 4px">🏆 참가자 랭킹</h2><p class="mu" style="margin:0 0 8px">전체 참가자 · 게임 기록에 따라 실시간 갱신</p><div></div>';
  el.appendChild(panel);rankEl=panel.querySelector('div');
  resultsCb=updateResults;drawRanking(curResults());
 }
