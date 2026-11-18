@@ -269,12 +269,40 @@ function finish(){
  upd({gs:'result',pts,['h'+S.gi]:{avg,add}});
 }
 function runHost(){
- const g=gm(S.order[S.gi]),el=$('#hg');if(!el||!g.host)return;
- let timers=[];stopGame=()=>{timers.forEach(t=>{clearTimeout(t);clearInterval(t)});resultsCb=null};
- try{g.host({el,n:S.n,players:players.map(p=>({id:p.id,name:p.name,team:S.teams[p.id]})),onResults:f=>{resultsCb=f;f(curResults())},set:v=>upd({g:v}),
+ const g=gm(S.order[S.gi]),el=$('#hg');if(!el)return;
+ let timers=[],gameResults=null,rankEl=null,panel=null;
+ const drawRanking=rs=>{
+  if(!rankEl)return;
+  if(!rankEl.isConnected&&panel){el.appendChild(panel);rankEl=panel.querySelector('div')}
+  const scores=new Map(rs.filter(r=>typeof r.v==='number').map(r=>[r.uid,r.v]));
+  const ranked=players.map(p=>({player:p,score:scores.has(p.id)?scores.get(p.id):null}));
+  ranked.sort((a,b)=>{if(a.score==null&&b.score!=null)return 1;if(a.score!=null&&b.score==null)return -1;if(a.score!=null&&b.score!=null&&a.score!==b.score)return g.hi===false?a.score-b.score:b.score-a.score;return String(a.player.name).localeCompare(String(b.player.name),'ko')});
+  const shown=ranked.slice(0,20);let last=null,place=0;
+  rankEl.innerHTML=shown.map((x,i)=>{
+   const p=x.player,v=x.score;
+   if(v!=null&&v!==last){place=i+1;last=v}
+   const medal=v==null?'—':place===1?'🥇':place===2?'🥈':place===3?'🥉':place+'위';
+   const team=p.team==null?null:COL[p.team];
+   let score='기록 대기';
+   if(v!=null){try{score=esc(g.fmt?g.fmt(v):String(v))}catch(e){score=esc(String(v))}}
+   return '<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;margin:5px 0;border:1px solid var(--bd);border-radius:11px;background:var(--card)">'
+    +'<span style="width:34px;text-align:center;font-weight:800">'+medal+'</span>'
+    +'<span style="width:8px;height:28px;border-radius:8px;background:'+(team?team[1]:'#888')+';flex:none"></span>'
+    +'<span style="flex:1;min-width:0"><b style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.name)+'</b><span class="mu" style="font-size:12px">'+(team?team[0]+' 팀':'팀 없음')+'</span></span>'
+    +'<b style="white-space:nowrap">'+score+'</b></div>';
+  }).join('')||'<p class="mu">참가자가 없습니다.</p>';
+  if(ranked.length>20)rankEl.innerHTML+='<p class="mu" style="text-align:center">전체 '+ranked.length+'명 중 점수순 상위 20명 표시</p>';
+ };
+ const updateResults=rs=>{if(gameResults)gameResults(rs);drawRanking(rs)};
+ stopGame=()=>{timers.forEach(t=>{clearTimeout(t);clearInterval(t)});resultsCb=null};
+ try{if(g.host)g.host({el,n:S.n,players:players.map(p=>({id:p.id,name:p.name,team:S.teams[p.id]})),onResults:f=>{gameResults=f;resultsCb=updateResults;f(curResults())},set:v=>upd({g:v}),
   every:(f,ms)=>{const t=setInterval(f,ms);timers.push(t);return t},
   after:(f,ms)=>{const t=setTimeout(f,ms);timers.push(t);return t}});
  }catch(e){el.innerHTML='<p style="color:#e24b4a">진행자 화면 오류: '+esc(String(e&&e.message||e))+'</p>'}
+ panel=document.createElement('section');panel.style.cssText='margin-top:18px;padding:14px;background:var(--card);border:1px solid var(--bd);border-radius:14px;text-align:left';
+ panel.innerHTML='<h2 style="margin:0 0 4px">🏆 참가자 랭킹</h2><p class="mu" style="margin:0 0 8px">점수순 상위 20명 · 게임 기록에 따라 실시간 갱신</p><div></div>';
+ el.appendChild(panel);rankEl=panel.querySelector('div');
+ resultsCb=updateResults;drawRanking(curResults());
 }
 function runGame(){
  const ga=$('#ga'),g=gm(S.order[S.gi]),pk=S.rd+'_'+S.gi+'_'+(S.at||0),gi=S.gi,rd=S.rd,at=S.at||0,team=S.teams[uid];
@@ -290,3 +318,4 @@ function runGame(){
  }catch(e){ga.innerHTML='<p style="color:#e24b4a">게임 오류: '+esc(String(e&&e.message||e))+'</p>'}
 }
 </script></body></html>
+
