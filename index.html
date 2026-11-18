@@ -150,7 +150,7 @@ function render(soft){
  lastKey=key;document.body.classList.toggle('pc',host);if(stopGame){stopGame();stopGame=null}
  const g=gm(ord[S.gi]);
  const menuH=(host&&S.phase==='game')?'<div class="card host"><p class="mu" style="margin:0 0 8px">진행자 메뉴</p><div class="row">'+(S.gs!=='result'?'<button id="sk">⏭ 이 게임 건너뛰기</button>':'')+'<button id="en">■ 게임 종료</button></div></div>':'';
- let h='<div class="mu">방 '+code+' · v12'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
+ let h='<div class="mu">방 '+code+' · v13'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
  if(S.phase==='lobby'){
   h+='<h1>대기실</h1>'+(host?'<div class="hl"><div>':'');
   if(host){
@@ -171,7 +171,8 @@ function render(soft){
   }else h+='<p class="mu">진행자가 시작하기를 기다리는 중…</p>';
  }else if(S.phase==='game'){
   h+='<h1>'+(S.gi+1)+'/'+ord.length+' '+g.name+' '+(S.gs==='intro'?'':S.pm?'<span class="badge" style="background:#c98f00;font-size:15px">시범 · 점수 없음</span>':'<span class="badge" style="font-size:15px">본 게임</span>')+'</h1>';
-  if(S.gs==='intro'){h+='<div class="card"><p class="intro">'+g.desc+'</p></div>'+(host?(pracOn(ord[S.gi])?'<div class="row"><button class="p" id="sp">🧪 시범 게임 시작</button><button id="st">▶ 본 게임 바로 시작</button></div>':'<button class="p w" id="st">▶ 본 게임 시작</button>'):'<p class="mu">'+(pracOn(ord[S.gi])?'진행자가 시범 게임을 시작하기를 기다리는 중…':'진행자가 시작하기를 기다리는 중…')+'</p>')}
+  if(S.gs==='intro'){const story=g.story||'AI가 인류의 미래를 위협하고 있습니다. 우리 팀의 힘을 모아 이 위기를 이겨 내야 합니다!';
+   h+='<div class="card" style="background:linear-gradient(135deg,#0b1230,#2a3b8f);color:#fff;border-color:#2a3b8f"><p style="margin:0 0 6px;font-weight:700;color:#9db7ff">📡 상황</p><p class="intro" style="margin:0;color:#fff">'+esc(story)+'</p></div><div class="card"><p style="margin:0 0 6px;font-weight:700;color:var(--pr)">🎮 게임 방법</p><p class="intro" style="margin:0">'+g.desc+'</p></div>'+(host?(pracOn(ord[S.gi])?'<div class="row"><button class="p" id="sp">🧪 시범 게임 시작</button><button id="st">▶ 본 게임 바로 시작</button></div>':'<button class="p w" id="st">▶ 본 게임 시작</button>'):'<p class="mu">'+(pracOn(ord[S.gi])?'진행자가 시범 게임을 시작하기를 기다리는 중…':'진행자가 시작하기를 기다리는 중…')+'</p>')}
   else if(S.gs==='play'){h+=host?'<div class="pg"><div class="card host" style="min-height:300px"><div id="hg">'+(g.host?'':'<p class="intro">'+g.desc+'</p><p class="mu">이 게임은 진행자 화면에 따로 표시되는 그림이 없습니다.</p>')+'</div></div><div><div class="card host"><p style="margin:0">참가자들이 게임 중입니다.</p><p class="mu">제출 <b id="cnt" style="font-size:22px">'+curResults().length+' / '+nTeamed()+'</b></p><button class="p w" id="fin">결과 공개</button></div>'+menuH+'</div></div>':'<div class="card" id="ga"></div>'}
   else if(S.pm){const a=S.pr||{avg:[]};
    h+='<div class="card"><p class="mu" style="margin:0 0 6px">시범 결과 · 점수에 반영되지 않아요</p><table><tr><th>팀</th><th>평균</th></tr>'+Array.from({length:S.n},(_,i)=>'<tr><td>'+tagH(i)+'</td><td>'+(a.avg&&a.avg[i]>=0?g.fmt(a.avg[i]):'-')+'</td></tr>').join('')+'</table></div>';
