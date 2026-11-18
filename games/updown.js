@@ -27,17 +27,20 @@ registerGame(Object.assign(base,{order:2,story:"AI가 장악한 감시 위성이
      return v;
     });
     a.forEach((v,i)=>{filtered[i]+=(v-filtered[i])*Math.min(1,dt/.045);if(Math.abs(filtered[i])<.22)filtered[i]=0});
-    const vertical=filtered[1],side=Math.abs(filtered[0]);
-    // Keep the vertical axis dominant. Lateral shakes are discarded and cannot build up travel.
-    if(Math.abs(vertical)<.35||Math.abs(vertical)<side*1.25){velocity*=Math.exp(-dt*2.5);position=0;direction=0;segmentAt=now}
-    const nextVelocity=velocity+vertical*dt;
-    position+=(velocity+nextVelocity)*.5*dt;
-    const nextDirection=Math.abs(nextVelocity)>.035?Math.sign(nextVelocity):direction;
-    if(direction&&nextDirection&&nextDirection!==direction){
-     const duration=now-segmentAt;
-     if(duration>=100&&duration<=1500&&Math.abs(position)>=.20){count++;score()}
-     position=0;velocity=0;segmentAt=now;direction=nextDirection;
-    }else{velocity=nextVelocity;if(!direction&&nextDirection){direction=nextDirection;segmentAt=now}}
+    const vertical=filtered[1],side=Math.hypot(filtered[0],filtered[2]);
+    const rr=e.rotationRate,turning=rr&&[rr.alpha,rr.beta,rr.gamma].some(v=>Number.isFinite(v)&&Math.abs(v)>35);
+    // Require a strong Y-axis signal. X/Z movement and rapid phone rotation cancel a candidate.
+    if(turning||Math.abs(vertical)<.55||Math.abs(vertical)<side*1.8){velocity=0;position=0;direction=0;segmentAt=now}
+    else{
+     const nextVelocity=velocity+vertical*dt;
+     position+=(velocity+nextVelocity)*.5*dt;
+     const nextDirection=Math.abs(nextVelocity)>.035?Math.sign(nextVelocity):direction;
+     if(direction&&nextDirection&&nextDirection!==direction){
+      const duration=now-segmentAt;
+      if(duration>=100&&duration<=1500&&Math.abs(position)>=.20){count++;score()}
+      position=0;velocity=0;segmentAt=now;direction=nextDirection;
+     }else{velocity=nextVelocity;if(!direction&&nextDirection){direction=nextDirection;segmentAt=now}}
+    }
     if(now-startedAt>=10000){end();return}
     const timer=c.ga.querySelector('#tl');if(timer)timer.textContent=Math.max(0,Math.ceil(10-(now-startedAt)/1000));
    });
