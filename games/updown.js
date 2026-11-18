@@ -1,6 +1,6 @@
 /* 위아래로 움직이기 — 센서(흔들기) 게임. 진행자 화면에는 팀별 로켓 높이로 현재 진행 상태를 비교해서 보여 줌 */
 (function(){
-const base=shakeGame("updown","위아래로 움직이기","y","위아래","10초 동안 스마트폰을 같은 방향으로 잡고 위아래로 움직이세요. 센서가 추정한 한 번의 이동 거리가 50cm 이상일 때만 1회로 인정됩니다. 진행자 화면에서는 팀별 로켓이 움직인 만큼 높이 올라갑니다. (많을수록 좋음)",["▲ 위","아래 ▼"]);
+const base=shakeGame("updown","위아래로 움직이기","y","위아래","10초 동안 스마트폰을 같은 방향으로 잡고 위아래로 움직이세요. 센서가 추정한 한 번의 이동 거리가 20cm 이상일 때만 1회로 인정됩니다. 진행자 화면에서는 팀별 로켓이 움직인 만큼 높이 올라갑니다. (많을수록 좋음)",["▲ 위","아래 ▼"]);
 registerGame(Object.assign(base,{order:2,story:"AI가 장악한 감시 위성이 지구 전체를 내려다보고 있습니다. 인류의 로켓을 쏘아 올려 위성을 무력화해야 합니다. 폰을 위아래로 움직여 우리 팀 로켓의 추진력을 모으세요!",
  run(c){
   c.ready(async()=>{
@@ -20,7 +20,7 @@ registerGame(Object.assign(base,{order:2,story:"AI가 장악한 감시 위성이
     if(e.acceleration&&Number.isFinite(e.acceleration.y)){raw=e.acceleration.y}
     else if(e.accelerationIncludingGravity&&Number.isFinite(e.accelerationIncludingGravity.y)){raw=e.accelerationIncludingGravity.y;linear=false}
     else return;
-    if(waiting){waiting=false;startedAt=now;lastAt=now;segmentAt=now;if(!linear)gravity=raw;const h=c.ga.querySelector('#motionHint');if(h)h.textContent='위아래로 움직이세요 · 50cm 미만은 세지 않아요';return}
+    if(waiting){waiting=false;startedAt=now;lastAt=now;segmentAt=now;if(!linear)gravity=raw;const h=c.ga.querySelector('#motionHint');if(h)h.textContent='위아래로 움직이세요 · 20cm 미만은 세지 않아요';return}
     const dt=Math.min(.06,Math.max(.008,(now-lastAt)/1000));lastAt=now;
     let a=raw;
     if(!linear){if(gravity==null)gravity=raw;a=raw-gravity;gravity+=((raw-gravity)*dt)/(1.25+dt)}
@@ -31,7 +31,7 @@ registerGame(Object.assign(base,{order:2,story:"AI가 장악한 감시 위성이
     const nextDirection=Math.abs(nextVelocity)>.12?Math.sign(nextVelocity):direction;
     if(direction&&nextDirection&&nextDirection!==direction){
      const duration=now-segmentAt;
-     if(duration>=180&&duration<=4000&&Math.abs(position)>=.50){count++;score()}
+     if(duration>=180&&duration<=4000&&Math.abs(position)>=.20){count++;score()}
      position=0;velocity=0;segmentAt=now;direction=nextDirection;
     }else{velocity=nextVelocity;if(!direction&&nextDirection){direction=nextDirection;segmentAt=now}}
     if(now-startedAt>=10000){end();return}
