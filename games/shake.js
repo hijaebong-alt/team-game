@@ -1,7 +1,7 @@
 /* 빠르게 흔들기 — 센서(흔들기) 게임. 진행자 화면에는 팀별 풍선 크기로 현재 진행 상태를 비교해서 보여 줌 */
 (function(){
 const base=shakeGame("shake","빠르게 흔들기","x","좌우","10초 동안 스마트폰을 좌우로 힘차게 흔드세요. 센서가 안 되면 좌/우 버튼을 번갈아 누르는 방식으로 바뀝니다. 진행자 화면에서는 팀별 풍선이 흔든 만큼 커집니다. (많을수록 좋음)",["◀ 좌","우 ▶"]);
-registerGame(Object.assign(base,{order:1,
+registerGame(Object.assign(base,{order:1,story:"AI가 도시의 통신망을 마비시키는 방해 신호를 퍼뜨리고 있습니다. 인류의 에너지를 한데 모아 신호를 날려 버려야 합니다! 팀원 모두가 힘껏 흔들어 에너지 풍선을 누구보다 크게 부풀리세요.",
  /* ---- 진행자 화면: 팀 평균 흔든 횟수에 따라 풍선이 커짐 ---- */
  host(c){
   if(!c.onResults){c.el.innerHTML='<p style="color:#e24b4a">index.html이 예전 버전입니다. 최신 index.html을 올린 뒤 Ctrl+F5로 새로고침하세요.</p>';return}
