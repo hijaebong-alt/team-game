@@ -19,7 +19,9 @@ registerGame({
    +Array.from({length:c.n},(_,t)=>'<div style="margin:14px 0;text-align:left"><b style="color:'+COL[t]+';font-size:20px">'+TN[t]+' 팀</b> <span id="cr'+t+'"></span> <span id="v'+t+'" class="mu">평균 0점</span>'
     +'<div style="position:relative;height:38px;border-radius:19px;overflow:hidden;background:var(--bg);border:1px solid var(--bd);margin-top:4px">'
     +'<div id="bf'+t+'" style="height:100%;width:0;background:linear-gradient(90deg,#ffd54a,#ff9ecf,#8fd3ff);transition:width .6s"></div>'
-    +'<div id="sh'+t+'" style="position:absolute;top:0;left:0;font-size:24px;line-height:38px;transition:left .6s">🍀</div></div></div>').join('')+'</div></div>';
+    +'<div id="sh'+t+'" style="position:absolute;top:0;left:0;font-size:24px;line-height:38px;transition:left .6s">🍀</div></div></div>').join('')+'</div>'
+   +'<div style="margin-top:24px;text-align:left"><h2 style="margin:0 0 4px">🍀 행운 랭킹</h2><p class="mu" style="margin:0 0 10px">점수를 뽑을 때마다 순위가 실시간으로 바뀝니다.</p><div id="luckRank"></div></div></div>';
+  const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   const draw=()=>{
    avg.forEach((a,t)=>{
     const w=Math.min(100,a/MAXV*100);
@@ -29,11 +31,29 @@ registerGame({
     const cr=q('#cr'+t);if(cr)cr.textContent=lead(t);
    });
   };
+  const drawRanking=rs=>{
+   const scoreById=new Map(rs.filter(r=>typeof r.v==='number').map(r=>[r.uid,r.v]));
+   const ranked=c.players.map(p=>({player:p,score:scoreById.has(p.id)?scoreById.get(p.id):null}));
+   ranked.sort((a,b)=>{if(a.score==null&&b.score!=null)return 1;if(a.score!=null&&b.score==null)return -1;if(a.score!=null&&b.score!=null&&a.score!==b.score)return b.score-a.score;return String(a.player.name).localeCompare(String(b.player.name),'ko')});
+   let place=0,lastScore=null;
+   const rows=ranked.map((x,i)=>{
+    const p=x.player,team=p.team,col=COL[team]||'#888',score=x.score;
+    if(score!=null&&score!==lastScore){place=i+1;lastScore=score}
+    const medal=place===1?'🥇':place===2?'🥈':place===3?'🥉':(score==null?'–':place+'위');
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin:6px 0;border:1px solid var(--bd);border-radius:12px;background:var(--card)">'
+     +'<span style="width:34px;text-align:center;font-weight:800;font-size:16px">'+medal+'</span>'
+     +'<span style="width:9px;height:30px;border-radius:8px;background:'+col+';flex:none"></span>'
+     +'<span style="flex:1;min-width:0"><b style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(p.name)+'</b><span class="mu" style="font-size:12px">'+esc(TN[team]||'팀 없음')+' 팀</span></span>'
+     +'<b style="font-size:18px;white-space:nowrap">'+(score==null?'<span class="mu" style="font-size:13px">기록 대기</span>':score+'점')+'</b></div>';
+   }).join('');
+   const el=q('#luckRank');if(el)el.innerHTML=rows||'<p class="mu">참가자가 없습니다.</p>';
+  };
   c.onResults(rs=>{
    for(let t=0;t<c.n;t++){const sum=rs.filter(r=>r.team===t&&typeof r.v==='number').reduce((a,r)=>a+r.v,0);avg[t]=size[t]?sum/size[t]:0}
-   draw();
+   draw();drawRanking(rs);
   });
  },
  run(c){c.ready(()=>{let n=0,sum=0,last=0;const draw=()=>{c.ga.innerHTML='<p class="mu">'+n+'/5 · 합계 '+sum+'</p><button class="p" id="pad" style="height:140px">뽑기!</button>'+(n?'<p class="big">+'+last+'</p>':'');
   $('#pad').onpointerdown=e=>{e.preventDefault();$('#pad').onpointerdown=null;last=Math.floor(Math.random()*101);sum+=last;n++;c.live(sum);if(n>=5)c.submit(sum);else draw()}};draw()})}
 });
+
