@@ -42,32 +42,6 @@ body.pc .pg{display:grid;grid-template-columns:1fr 300px;gap:24px;align-items:st
 body.pc #hg{zoom:1.5}
 body.pc #hg .big{font-size:40px}
 @media (max-width:900px){body.pc .hl,body.pc .pg{display:block}body.pc #hg{zoom:1}}
-/* 화면 정돈: 기존 게임 흐름과 PC 레이아웃 유지 */
-:root{--bg:#f3f5fa;--card:#fff;--tx:#172033;--mu:#68738a;--bd:#e2e7f0;--pr:#5b5ce2;--prt:#fff;--soft:#f0f0ff;--shadow:0 12px 32px #24345a12;color-scheme:light}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101522;--card:#1a2232;--tx:#f1f4fb;--mu:#a4afc2;--bd:#303b50;--pr:#9091ff;--prt:#15162d;--soft:#292b48;--shadow:0 12px 32px #0004;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#101522;--card:#1a2232;--tx:#f1f4fb;--mu:#a4afc2;--bd:#303b50;--pr:#9091ff;--prt:#15162d;--soft:#292b48;--shadow:0 12px 32px #0004;color-scheme:dark}
-body{background:radial-gradient(ellipse at 50% -10%,#7776ee1b,transparent 38%),var(--bg);letter-spacing:-.01em}
-#app{width:min(100%,600px);padding:clamp(18px,5vw,32px) 18px calc(32px + env(safe-area-inset-bottom,0px))}
-h1{font-size:clamp(25px,6vw,32px);line-height:1.25;letter-spacing:-.045em;font-weight:800;margin:12px 0 8px}h2{font-size:19px;letter-spacing:-.025em;font-weight:750;margin-bottom:12px}
-.card{border-radius:20px;padding:20px;margin:14px 0;box-shadow:var(--shadow)}
-input[type=text],input:not([type]),input[type=number]{padding:14px 15px;border-radius:13px;outline:none;transition:border-color .18s,box-shadow .18s}
-input:focus{border-color:var(--pr);box-shadow:0 0 0 4px color-mix(in srgb,var(--pr) 17%,transparent)}
-button{min-height:48px;border-radius:13px;font-weight:650;touch-action:manipulation;transition:transform .12s,filter .12s,border-color .12s;box-shadow:0 2px 5px #14213a0a}
-button:hover:not(:disabled){border-color:var(--pr);filter:brightness(1.025)}button:active:not(:disabled){transform:scale(.98)}button:focus-visible{outline:3px solid color-mix(in srgb,var(--pr) 45%,transparent);outline-offset:2px}
-button.p{font-weight:750;box-shadow:0 5px 14px color-mix(in srgb,var(--pr) 25%,transparent)}
-.row{gap:10px}.row>button{min-width:90px}
-.tag{padding:4px 12px;font-weight:700;box-shadow:0 2px 6px #17203320}
-.code{font-size:clamp(38px,10vw,50px);line-height:1.1;font-weight:850;letter-spacing:.22em;color:var(--pr)}
-#pad{min-height:clamp(150px,42vw,220px);height:auto;font-size:clamp(28px,8vw,40px);font-weight:800;border-radius:20px}
-table{border-collapse:separate;border-spacing:0;overflow:hidden}td,th{padding:11px 8px}th{color:var(--mu);font-size:13px;font-weight:700}tr:last-child td{border-bottom:0}
-.big{font-size:clamp(44px,14vw,64px);line-height:1.1;font-weight:850;letter-spacing:-.05em;margin:18px 0}
-.qr{border-radius:16px;box-shadow:0 4px 18px #17203318}.host{border-left-width:4px}
-label.g{gap:12px;padding:11px 10px;border-bottom:1px solid var(--bd);cursor:pointer}label.g:last-of-type{border-bottom:0}label.g input{width:18px;height:18px;accent-color:var(--pr);flex:none;margin:3px 0 0}
-.badge{background:var(--soft);color:var(--pr);border-radius:99px;padding:3px 9px;font-weight:750}
-#ga{padding:clamp(18px,5vw,26px);border-radius:18px;text-align:center;overflow:hidden}#ga input{text-align:center;font-size:24px;letter-spacing:.15em}
-body.pc #app{max-width:1280px;padding:28px 40px}body.pc h1{font-size:36px}body.pc .card{padding:24px;border-radius:22px}body.pc .code{font-size:62px}
-@media(max-width:420px){#app{padding-left:13px;padding-right:13px}.card{padding:16px;border-radius:17px}.row{gap:7px}.row>button{min-width:72px;padding-inline:10px}td,th{padding:9px 5px;font-size:14px}}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
 </style></head><body><div id="app"><p class="mu">연결 중…</p></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -316,4 +290,3 @@ function runGame(){
  }catch(e){ga.innerHTML='<p style="color:#e24b4a">게임 오류: '+esc(String(e&&e.message||e))+'</p>'}
 }
 </script></body></html>
-
