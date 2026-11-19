@@ -170,13 +170,13 @@ const nTeamed=()=>Object.keys(S.teams).length;
 function render(soft){
  if(!S)return;
  const host=S.host===uid,my=S.teams[uid],ord=S.order||GAMES.map(g=>g.id);
- const key=[S.phase,S.gi,S.gs,S.n,S.rd,my,ord.join('|'),S.pm?1:0,S.at||0,JSON.stringify(S.teams||{}),JSON.stringify(players.map(p=>[p.id,p.name]))].join();
+ const key=[S.phase,S.gi,S.gs,S.n,S.rd,my,ord.join('|'),S.pm?1:0,S.at||0].join();
  if(key===lastKey&&S.gs==='play'){if(dataCb)dataCb(S.g);const c=$('#cnt');if(c)c.textContent=curResults().length+' / '+nTeamed();return}
- if(soft&&key===lastKey&&S.phase==='lobby'){const l=$('#pl');if(l){l.innerHTML=plistH();$('#pn').textContent=players.length}return}
+ if(soft&&key===lastKey&&S.phase==='lobby'){const l=$('#pl');if(l){l.innerHTML=plistH();$('#pn').textContent=players.length}if(host&&!dragging)drawBoard();return}
  lastKey=key;document.body.classList.toggle('pc',host);if(stopGame){stopGame();stopGame=null}
  const g=gm(ord[S.gi]);
  const menuH=(host&&S.phase==='game')?'<div class="card host"><p class="mu" style="margin:0 0 8px">진행자 메뉴</p><div class="row">'+(S.gs!=='result'?'<button id="sk">⏭ 이 게임 건너뛰기</button>':'')+'<button id="en">■ 게임 종료</button></div></div>':'';
- let h='<div class="mu">방 '+code+' · v16 · <a href="manual.html" target="_blank" rel="noopener" style="color:var(--pr)">📖 설명서</a>'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
+ let h='<div class="mu">방 '+code+' · v17 · <a href="manual.html" target="_blank" rel="noopener" style="color:var(--pr)">📖 설명서</a>'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
  if(S.phase==='lobby'){
   h+='<h1>대기실</h1>'+(host?'<div class="hl"><div>':'');
   if(host){
@@ -185,7 +185,8 @@ function render(soft){
   h+='<div class="card"><h2>참가자 <span id="pn">'+players.length+'</span>명</h2><div id="pl">'+plistH()+'</div></div>';
   if(host){
    h+='</div><div>';
-   h+='<div class="card host"><h2>팀 설정</h2><div class="row">'+[2,3,4].map(n=>'<button data-n="'+n+'" class="'+(S.n===n?'p':'')+'">'+n+'팀</button>').join('')+'</div>'+teamBoardH()+'<button class="w" id="as">무작위 팀 배정 / 다시 섞기</button></div>';
+   h+='<div class="card host"><h2>팀 설정</h2><div class="row">'+[2,3,4].map(n=>'<button data-n="'+n+'" class="'+(S.n===n?'p':'')+'">'+n+'팀</button>').join('')+'</div><button class="w" id="as">무작위 팀 배정 / 다시 섞기</button></div>';
+   h+='<div class="card host" style="user-select:none"><h2>👥 팀 직접 나누기</h2><p class="mu" style="margin:0 0 8px">참가자를 끌어서 팀 칸에 놓거나, 이름을 눌러 팀을 바꾸세요. (누를 때마다 미배정 → 1팀 → 2팀 … 순서)</p><div id="tbd" style="display:flex;gap:8px;flex-wrap:wrap"></div><p class="mu" id="twarn" style="margin:8px 0 0"></p><div class="row" style="margin-top:6px"><button id="ta">남은 인원 균등 배정</button><button id="tc">모두 해제</button></div></div>';
    const sel=ord.filter(id=>GAMES.some(x=>x.id===id)),rest=GAMES.filter(x=>!ord.includes(x.id));
    const sb='style="flex:0 0 auto;padding:8px 12px"';
    const rowH=(id,i,btn)=>'<div class="row" data-id="'+id+'" style="align-items:center;margin:6px 0;flex-wrap:nowrap;padding:6px;border:1px solid var(--bd);border-radius:10px;background:var(--card)"><span class="dh" style="cursor:grab;touch-action:none;padding:4px 8px;font-size:20px;color:var(--mu)">☰</span><span class="no" style="width:24px;font-weight:700">'+i+'</span><span style="flex:1"><b>'+esc(gm(id).name)+'</b></span>'+btn+'</div>';
@@ -217,50 +218,51 @@ function render(soft){
  if(host&&S.phase==='game'&&S.gs!=='play')h+=menuH;
  app.innerHTML=h;bind(host);
 }
-function plistH(){return players.map(p=>'<span class="tag" style="background:'+(S.teams[p.id]!=null?COL[S.teams[p.id]][1]:'#888')+'">'+esc(p.name)+'</span>').join('')||'<span class="mu">아직 없음</span>'}
-function teamBoardH(){
- const teams=S.teams||{};
- const lane=(target,label,color,members)=>'<div data-team-target="'+target+'" style="min-height:92px;padding:10px;border:2px dashed var(--bd);border-radius:12px;background:var(--bg)"><b style="display:block;margin-bottom:8px;color:'+color+'">'+label+' ('+members.length+')</b><div style="display:flex;flex-wrap:wrap;gap:7px">'+(members.map(p=>'<span class="team-chip" data-player="'+esc(p.id)+'" style="display:inline-block;padding:8px 11px;border-radius:999px;background:'+color+';color:#fff;cursor:grab;touch-action:none;user-select:none">'+esc(p.name)+'</span>').join('')||'<span class="mu">여기로 끌어오세요</span>')+'</div></div>';
- const lanes=Array.from({length:S.n},(_,t)=>lane(String(t),COL[t][0],COL[t][1],players.filter(p=>teams[p.id]===t)));
- lanes.push(lane('none','미배정','#777',players.filter(p=>teams[p.id]==null)));
- return '<p class="mu">참가자 이름표를 원하는 팀 칸으로 끌어 놓으세요. 미배정 칸에 놓으면 팀 배정이 해제됩니다.</p><div id="teamBoard" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:10px">'+lanes.join('')+'</div>';
+let dragging=false;
+const setTeam=(id,t)=>upd({['teams.'+id]:t<0?firebase.firestore.FieldValue.delete():t});
+function boardInner(){
+ const cols=[-1].concat(Array.from({length:S.n},(_,i)=>i));
+ return cols.map(t=>{
+  const ms=players.filter(p=>(S.teams[p.id]==null?-1:S.teams[p.id])===t);
+  const col=t<0?'#888':COL[t][1],name=t<0?'미배정':COL[t][0]+' 팀';
+  return '<div class="tcol" data-t="'+t+'" style="flex:1;min-width:130px;border:2px dashed '+col+';border-radius:12px;padding:6px;min-height:84px"><b style="color:'+col+'">'+name+' <span class="mu">('+ms.length+')</span></b><div class="tl">'
+   +ms.map(p=>'<span class="tchip" data-id="'+p.id+'" style="display:inline-block;margin:3px;padding:5px 11px;border-radius:99px;background:'+col+';color:#fff;cursor:grab;touch-action:none;user-select:none">'+esc(p.name)+'</span>').join('')+'</div></div>';
+ }).join('');
 }
+function drawBoard(){
+ const b=$('#tbd');if(!b)return;
+ b.innerHTML=boardInner();bindBoard();
+ const un=players.filter(p=>S.teams[p.id]==null).length,w=$('#twarn');
+ if(w)w.textContent=un?'⚠ 미배정 '+un+'명은 게임에 참여하지 못해요':'✅ 모든 참가자가 팀에 배정됐어요 (팀 인원: '+Array.from({length:S.n},(_,i)=>players.filter(p=>S.teams[p.id]===i).length).join(' / ')+')';
+}
+function bindBoard(){
+ document.querySelectorAll('.tchip').forEach(ch=>ch.onpointerdown=e=>{
+  e.preventDefault();dragging=true;const id=ch.dataset.id,x0=e.clientX,y0=e.clientY;let moved=false;
+  const cols=[...document.querySelectorAll('.tcol')];
+  const mv=ev=>{
+   if(!moved&&Math.hypot(ev.clientX-x0,ev.clientY-y0)<6)return;
+   moved=true;ch.style.opacity='.5';
+   const tgt=cols.find(c=>{const r=c.getBoundingClientRect();return ev.clientX>=r.left&&ev.clientX<=r.right&&ev.clientY>=r.top&&ev.clientY<=r.bottom});
+   cols.forEach(c=>c.style.background=(c===tgt)?'var(--bg)':'');
+   if(tgt)tgt.querySelector('.tl').appendChild(ch);
+  };
+  const up=()=>{
+   window.removeEventListener('pointermove',mv);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',up);
+   dragging=false;ch.style.opacity='';
+   let t;
+   if(moved){const col=ch.closest('.tcol');t=col?+col.dataset.t:-1}
+   else{const cur=S.teams[id];t=cur==null?0:(cur+1<S.n?cur+1:-1)}      // 이름을 누르면 미배정→1팀→2팀…→미배정
+   setTeam(id,t);
+  };
+  window.addEventListener('pointermove',mv);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',up);
+ });
+}
+function plistH(){return players.map(p=>'<span class="tag" style="background:'+(S.teams[p.id]!=null?COL[S.teams[p.id]][1]:'#888')+'">'+esc(p.name)+'</span>').join('')||'<span class="mu">아직 없음</span>'}
 function bind(host){
  const on_=(id,f)=>{const e=document.querySelector(id);if(e)e.onclick=f};
  if(host&&S.phase==='lobby'){try{const pa=new Audio();pa.preload='auto';pa.src='intro/opening.mp3';new Image().src='intro/opening.gif'}catch(e){}}
  if(host&&S.phase==='lobby'&&$('#qr')&&window.QRCode){new QRCode($('#qr'),{text:SHARE+'#r'+code,width:260,height:260,correctLevel:QRCode.CorrectLevel.M})}
  document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>upd({n:+b.dataset.n,teams:{}}));
- if(host&&S.phase==='lobby'&&$('#teamBoard')){
-  document.querySelectorAll('.team-chip').forEach(chip=>chip.onpointerdown=e=>{
-   if(e.button!==0)return;e.preventDefault();
-   const player=chip.dataset.player,startX=e.clientX,startY=e.clientY;
-   let ghost=null,target=null,moved=false;
-   const clear=()=>{
-    window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',cancel);
-    document.querySelectorAll('[data-team-target]').forEach(x=>x.style.outline='');
-    if(ghost)ghost.remove();chip.style.opacity='';
-   };
-   const move=ev=>{
-    if(!moved&&Math.hypot(ev.clientX-startX,ev.clientY-startY)>6){
-     moved=true;ghost=chip.cloneNode(true);ghost.style.cssText+=';position:fixed;z-index:9999;pointer-events:none;opacity:.85;transform:translate(-50%,-50%)';document.body.appendChild(ghost);chip.style.opacity='.35';
-    }
-    if(!moved)return;
-    ghost.style.left=ev.clientX+'px';ghost.style.top=ev.clientY+'px';
-    document.querySelectorAll('[data-team-target]').forEach(x=>x.style.outline='');
-    target=document.elementFromPoint(ev.clientX,ev.clientY)?.closest('[data-team-target]')||null;
-    if(target)target.style.outline='3px solid var(--pr)';
-   };
-   const up=()=>{
-    const dest=target?.dataset.teamTarget;clear();
-    if(!moved||dest==null)return;
-    const teams={...(S.teams||{})};
-    if(dest==='none')delete teams[player];else teams[player]=Number(dest);
-    if(JSON.stringify(teams)!==JSON.stringify(S.teams||{}))upd({teams});
-   };
-   const cancel=()=>clear();
-   window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',cancel);
-  });
- }
  const O=()=>(S.order||[]).slice();
  const sl=$('#sl'),rl=$('#rl');
  const renum=()=>{if(sl)[...sl.querySelectorAll('[data-id]')].forEach((r,i)=>r.querySelector('.no').textContent=i+1);if(rl)[...rl.querySelectorAll('[data-id]')].forEach(r=>r.querySelector('.no').textContent='–')};
@@ -282,6 +284,9 @@ function bind(host){
  on_('#shf',()=>upd({order:O().sort(()=>Math.random()-.5)}));
  on_('#all',()=>{const a=O();GAMES.forEach(x=>{if(!a.includes(x.id))a.push(x.id)});upd({order:a})});
  on_('#non',()=>upd({order:[]}));
+ if(host&&S.phase==='lobby')drawBoard();
+ on_('#ta',()=>{const cnt=Array(S.n).fill(0);Object.keys(S.teams).forEach(id=>{if(S.teams[id]<S.n)cnt[S.teams[id]]++});const u={};players.filter(p=>S.teams[p.id]==null).sort(()=>Math.random()-.5).forEach(p=>{let m=0;cnt.forEach((v,i)=>{if(v<cnt[m])m=i});cnt[m]++;u['teams.'+p.id]=m});if(Object.keys(u).length)upd(u)});
+ on_('#tc',()=>upd({teams:{}}));
  const on=(id,f)=>{const e=$(id);if(e)e.onclick=f};
  on('#as',()=>{const ids=players.map(p=>p.id).sort(()=>Math.random()-.5),t={};ids.forEach((id,i)=>t[id]=i%S.n);upd({teams:t})});
  on('#go',()=>{const b=$('#go');if(b)b.disabled=true;startIntro('게임을 시작합니다!',()=>upd({phase:'game',gi:0,gs:'intro',pm:false}))});
