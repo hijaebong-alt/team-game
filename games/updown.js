@@ -1,7 +1,7 @@
 /* 위아래로 움직이기 — 센서(흔들기) 게임. 진행자 화면에는 팀별 로켓 높이로 현재 진행 상태를 비교해서 보여 줌 */
 (function(){
 const base=shakeGame("updown","위아래로 움직이기","y","위아래","10초 동안 스마트폰을 위아래로 움직이세요. 센서가 안 되면 위/아래 버튼을 번갈아 누르는 방식으로 바뀝니다. 진행자 화면에서는 팀별 로켓이 움직인 만큼 높이 올라갑니다. (많을수록 좋음)",["▲ 위","아래 ▼"]);
-registerGame(Object.assign(base,{order:2,
+registerGame(Object.assign(base,{order:2,story:"AI가 장악한 감시 위성이 지구 전체를 내려다보고 있습니다. 인류의 로켓을 쏘아 올려 위성을 무력화해야 합니다. 폰을 위아래로 움직여 우리 팀 로켓의 추진력을 모으세요!",
  /* ---- 진행자 화면: 팀 평균 움직인 횟수에 따라 로켓이 올라감 ---- */
  host(c){
   if(!c.onResults){c.el.innerHTML='<p style="color:#e24b4a">index.html이 예전 버전입니다. 최신 index.html을 올린 뒤 Ctrl+F5로 새로고침하세요.</p>';return}
