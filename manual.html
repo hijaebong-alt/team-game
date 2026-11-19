@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>팀 미니게임 설명서</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1d1d1b;--mu:#6b6a64;--bd:#dcdad2;--pr:#2f6fed;box-sizing:border-box}
+@media (prefers-color-scheme:dark){:root{--bg:#17181a;--card:#222427;--tx:#f0efe9;--mu:#9a9992;--bd:#3a3c40;--pr:#5b8cff}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.65 -apple-system,"Noto Sans KR","Malgun Gothic",sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:16px}
+.hero{background:linear-gradient(135deg,#0b1230,#2a3b8f);color:#fff;border-radius:16px;padding:24px;margin:8px 0 16px}
+.hero h1{margin:0 0 6px;font-size:28px}.hero p{margin:0;color:#cdd8ff}
+h2{font-size:22px;margin:28px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--bd)}
+h3{font-size:18px;margin:0 0 6px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin:12px 0}
+.mu{color:var(--mu);font-size:14px}
+ol,ul{margin:6px 0 6px 20px;padding:0}li{margin:4px 0}
+.btn{display:inline-block;padding:8px 14px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);text-decoration:none;font-size:15px;cursor:pointer}
+.btn.p{background:var(--pr);border-color:var(--pr);color:#fff;font-weight:700}
+.toc{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.toc a{font-size:14px;padding:4px 10px;border-radius:99px;border:1px solid var(--bd);background:var(--card);color:var(--tx);text-decoration:none}
+.story{background:linear-gradient(135deg,#0b1230,#2a3b8f);color:#fff;border-radius:10px;padding:12px 14px;margin:8px 0}
+.story b{color:#9db7ff}
+.how{border-left:4px solid var(--pr);padding:4px 0 4px 12px;margin:8px 0}
+.badge{display:inline-block;font-size:12px;padding:1px 8px;border-radius:99px;background:var(--pr);color:#fff;margin-left:6px;vertical-align:middle}
+.no{display:inline-block;min-width:30px;height:30px;line-height:30px;text-align:center;border-radius:50%;background:var(--pr);color:#fff;font-weight:700;margin-right:8px;font-size:15px}
+table{width:100%;border-collapse:collapse;font-size:15px}td,th{border:1px solid var(--bd);padding:8px;text-align:left;vertical-align:top}th{background:var(--bg)}
+.nav{position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:5}
+@media print{.nav,.noprint{display:none}body{background:#fff;color:#000}.card,.hero{break-inside:avoid}.hero,.story{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body><div class="wrap">
+
+<div class="hero"><h1>📖 팀 미니게임 설명서</h1><p>AI 시대, 인간이 힘을 모아 이겨내는 팀 대항 게임 — 진행 방법과 게임별 규칙</p></div>
+<div class="nav noprint"><a class="btn p" href="./">← 게임 화면으로</a> <a class="btn" onclick="window.print()">🖨️ 인쇄</a></div>
+
+<h2>1. 시작하기 전에</h2>
+<div class="card">
+ <ul>
+  <li><b>진행자</b>: PC(큰 화면이나 프로젝터에 연결)에서 이 사이트를 엽니다. 소리를 켜 두세요.</li>
+  <li><b>참가자</b>: 스마트폰으로 진행자가 보여 주는 QR코드를 찍어 입장합니다. 인터넷(와이파이 또는 데이터)이 필요합니다.</li>
+  <li>폰의 <b>자동 잠금 시간</b>을 늘리고 <b>저전력 모드</b>는 꺼 두면 연결이 끊기지 않습니다.</li>
+  <li>센서를 쓰는 게임(흔들기, 기울이기 등)은 폰을 <b>세로로</b> 잡고, 아이폰은 첫 사용 때 <b>모션 접근 허용</b> 창에서 허용을 눌러 주세요.</li>
+ </ul>
+</div>
+
+<h2>2. 진행 순서</h2>
+<div class="card">
+ <h3>진행자</h3>
+ <ol>
+  <li><b>새 방 만들기</b>를 누르면 QR코드와 4자리 방 코드가 나옵니다.</li>
+  <li>참가자가 입장하면 이름이 나타납니다. <b>팀 수(2~4팀)</b>를 고르고 <b>무작위 팀 배정</b>을 누릅니다. 마음에 안 들면 다시 섞을 수 있습니다.</li>
+  <li><b>게임 순서</b> 목록에서 ☰ 을 끌어서 순서를 바꾸고, 이번에 하지 않을 게임은 ✕ 로 뺍니다. 각 게임의 <b>시범</b> 체크를 풀면 연습 없이 바로 본 게임을 합니다.</li>
+  <li><b>게임 시작</b>을 누르면 오프닝이 나온 뒤 첫 번째 게임 안내가 나옵니다.</li>
+  <li>각 게임에서 <b>시범 게임</b>으로 연습한 뒤(몇 번이든 가능) <b>본 게임</b>을 시작합니다.</li>
+  <li>게임이 끝나면 <b>결과 공개</b>를 눌러 팀 순위와 점수를 확인하고 <b>다음 게임</b>으로 넘어갑니다. 건너뛰기와 게임 종료 버튼도 있습니다.</li>
+  <li>모든 게임이 끝나면 <b>최종 결과</b>에서 우승팀이 발표됩니다.</li>
+ </ol>
+ <h3>참가자</h3>
+ <ol>
+  <li>QR코드를 찍거나 진행자가 알려 준 방 코드를 입력하고, <b>이름(닉네임)</b>을 적어 입장합니다.</li>
+  <li>대기실에서 내 팀 색깔을 확인하고 기다립니다.</li>
+  <li>게임 안내 화면에서 <b>📡 상황</b>과 <b>🎮 게임 방법</b>을 읽고, 시작 안내에 맞춰 참여합니다.</li>
+  <li>게임이 끝나면 결과가 나올 때까지 폰을 켜 둔 채 기다립니다.</li>
+ </ol>
+</div>
+
+<h2>3. 점수 계산</h2>
+<div class="card">
+ <ul>
+  <li>각 게임에서 <b>팀원 기록의 평균</b>으로 팀 순위를 정합니다. 팀 인원이 달라도 공정합니다.</li>
+  <li>순위에 따라 점수를 받습니다. 예) 4팀이면 1위 4점, 2위 3점, 3위 2점, 4위 1점 (3팀이면 3·2·1점, 2팀이면 2·1점).</li>
+  <li>모든 게임의 점수를 합산해 <b>총점이 가장 높은 팀이 우승</b>합니다.</li>
+  <li><b>시범 게임은 점수에 반영되지 않습니다.</b> 본 게임만 점수가 됩니다.</li>
+  <li>팀 인원이 다르면 일부 게임(별칭 빨리 누르기, 엘리베이터 합의 등)은 인원이 가장 적은 팀에 맞춰 같은 수만 참여하고, 나머지는 응원합니다.</li>
+ </ul>
+</div>
+
+<h2>4. 게임 소개 <span class="mu" id="cnt"></span></h2>
+<p class="mu">이 목록은 게임이 추가되거나 수정되면 자동으로 새로 불러옵니다.</p>
+<div class="toc noprint" id="toc"></div>
+<div id="games"><div class="card mu">게임 목록을 불러오는 중…</div></div>
+
+<h2>5. 문제가 생겼을 때</h2>
+<div class="card">
+ <table>
+  <tr><th style="width:34%">증상</th><th>해결 방법</th></tr>
+  <tr><td>QR을 찍어도 입장이 안 돼요</td><td>방 코드 4자리를 직접 입력해 보세요. 진행자가 새 방을 만들었다면 새 QR을 다시 찍어야 합니다.</td></tr>
+  <tr><td>폰을 흔들어도 인식이 안 돼요 (아이폰)</td><td>설정 → Safari → 모션 및 방향 접근이 켜져 있는지 확인하고, 게임에서 뜨는 허용 창에서 <b>허용</b>을 눌러 주세요. 폰을 세로로 잡고 크게 움직여 보세요.</td></tr>
+  <tr><td>화면이 꺼지거나 연결이 끊겼어요</td><td>사이트를 새로고침하고 같은 방 코드로 다시 입장하세요. 화면 오른쪽 아래에 "🔆 화면 꺼짐 방지 켜짐"이 보이는지 확인하세요. 안 보이면 화면을 한 번 터치해 주세요.</td></tr>
+  <tr><td>진행자 화면에 그림이 안 나와요</td><td>PC에서 Ctrl+Shift+R로 강력 새로고침한 뒤 새 방을 만들어 보세요.</td></tr>
+  <tr><td>소리가 안 나와요</td><td>진행자 PC의 소리를 켜고, 게임 시작 버튼을 누른 뒤에 다시 시도하세요.</td></tr>
+  <tr><td>다른 사람이 내 팀으로 보여요</td><td>진행자가 대기실에서 팀 배정을 다시 하고, 참가자는 새로고침하세요.</td></tr>
+ </table>
+</div>
+
+<p class="mu" style="text-align:center;margin:24px 0 8px">이 설명서는 게임 화면의 "📖 설명서" 링크에서 언제든 다시 열 수 있습니다.</p>
+</div>
+
+<script>
+/* 게임 파일(games/*.js)의 이름·상황·방법을 읽어 설명서를 자동으로 만듭니다 */
+const GAMES=[],loaded={};
+const $=()=>null;
+function askMotion(){return Promise.resolve(false)}
+function shakeGame(id,name,axis,lab,desc){return{id,name,desc}}    // 센서 게임 도우미(설명서에서는 이름·설명만 사용)
+function registerGame(g){const i=GAMES.findIndex(x=>x.id===g.id);if(i>=0)GAMES[i]=g;else GAMES.push(g);
+ GAMES.sort((a,b)=>(a.order==null?999:a.order)-(b.order==null?999:b.order)||String(a.name).localeCompare(b.name,'ko'))}
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+function loadGame(id){return loaded[id]||(loaded[id]=new Promise(res=>{const el=document.createElement('script');el.src='games/'+id+'.js?v='+Date.now();el.onload=()=>res(true);el.onerror=()=>res(false);document.head.appendChild(el)}))}
+async function listIds(){
+ const set=new Set();const m=location.hostname.match(/^(.+)\.github\.io$/),repo=location.pathname.split('/')[1];
+ if(m&&repo){try{const r=await fetch('https://api.github.com/repos/'+m[1]+'/'+repo+'/contents/games');if(r.ok)(await r.json()).forEach(f=>{if(/^[^_].*\.js$/.test(f.name))set.add(f.name.replace(/\.js$/,''))})}catch(e){}}
+ try{const r=await fetch('games/list.json?v='+Date.now());if(r.ok)(await r.json()).forEach(x=>{x=String(x).replace(/\.js$/,'');if(x&&x[0]!=='_')set.add(x)})}catch(e){}
+ return [...set]}
+(async()=>{
+ const ids=await listIds();await Promise.all(ids.map(loadGame));
+ const box=document.getElementById('games');
+ if(!GAMES.length){box.innerHTML='<div class="card mu">게임 목록을 불러오지 못했습니다. 잠시 후 새로고침해 주세요.</div>';return}
+ document.getElementById('cnt').textContent='(총 '+GAMES.length+'종)';
+ document.getElementById('toc').innerHTML=GAMES.map((g,i)=>'<a href="#g'+(i+1)+'">'+(i+1)+'. '+esc(g.name)+'</a>').join('');
+ box.innerHTML=GAMES.map((g,i)=>'<div class="card" id="g'+(i+1)+'"><h3><span class="no">'+(i+1)+'</span>'+esc(g.name)+(typeof g.host==='function'?'<span class="badge">📺 진행자 화면 연동</span>':'')+'</h3>'
+  +(g.story?'<div class="story"><b>📡 상황</b><div>'+esc(g.story)+'</div></div>':'')
+  +'<div class="how"><b>🎮 게임 방법</b><div>'+esc(g.desc)+'</div></div></div>').join('');
+ if(location.hash){const e=document.querySelector(location.hash);if(e)e.scrollIntoView()}
+})();
+</script></body></html>

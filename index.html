@@ -117,7 +117,7 @@ function start(){hashCode()?playerEntry(hashCode()):hostEntry()}
 /* ---------- 진행자 입구 ---------- */
 function hostEntry(){
  let last=null;try{last=localStorage.getItem('tg_host')}catch(e){}
- app.innerHTML='<h1>팀 미니게임 · 진행자</h1><p class="mu">방을 만들면 참가자용 QR코드가 나옵니다.</p><div class="card host"><button class="p w" id="mk">새 방 만들기</button>'+(last?'<button class="w" id="re">이전 방 다시 열기 ('+last+')</button>':'')+'</div><div class="card"><p class="mu">참가자라면 진행자가 보여 주는 QR코드로 입장하세요.</p><div class="row"><input id="cd" placeholder="방 코드 4자리" inputmode="numeric" maxlength="4"><button id="jn">참가자로 입장</button></div></div><p id="err" class="mu"></p>';
+ app.innerHTML='<h1>팀 미니게임 · 진행자</h1><p class="mu">방을 만들면 참가자용 QR코드가 나옵니다.</p><div class="card host"><button class="p w" id="mk">새 방 만들기</button>'+(last?'<button class="w" id="re">이전 방 다시 열기 ('+last+')</button>':'')+'</div><div class="card"><p class="mu">참가자라면 진행자가 보여 주는 QR코드로 입장하세요.</p><div class="row"><input id="cd" placeholder="방 코드 4자리" inputmode="numeric" maxlength="4"><button id="jn">참가자로 입장</button></div></div><p style="text-align:center;margin:14px 0"><a href="manual.html" target="_blank" rel="noopener" style="color:var(--pr);font-weight:700;font-size:17px">📖 게임 설명서 보기</a></p><p id="err" class="mu"></p>';
  $('#mk').onclick=async()=>{const c=String(Math.floor(1000+Math.random()*9000));
   await loadCatalog();await db.doc('rooms/'+c).set({host:uid,phase:'lobby',n:2,teams:{},order:GAMES.map(g=>g.id),gi:0,gs:'intro',rd:1,pts:[0,0,0,0]});openRoom(c,true)};
  if(last)$('#re').onclick=async()=>{const s=await db.doc('rooms/'+last).get();if(s.exists&&s.data().host===uid)openRoom(last,true);else $('#err').textContent='이전 방을 열 수 없습니다.'};
@@ -139,7 +139,7 @@ function startIntro(title,onEnd){
  ov.querySelector('#isk').onclick=end;
 }
 function playerEntry(c){
- app.innerHTML='<h1>팀 미니게임</h1><p class="mu">방 코드 <b>'+c+'</b></p><div class="card"><input id="nm" placeholder="이름 또는 닉네임" maxlength="12" value="'+esc(myName)+'"><button class="p w" id="jn">입장하기</button></div><p id="err" class="mu"></p>';
+ app.innerHTML='<h1>팀 미니게임</h1><p class="mu">방 코드 <b>'+c+'</b></p><div class="card"><input id="nm" placeholder="이름 또는 닉네임" maxlength="12" value="'+esc(myName)+'"><button class="p w" id="jn">입장하기</button></div><p style="text-align:center;margin:14px 0"><a href="manual.html" target="_blank" rel="noopener" style="color:var(--pr);font-weight:700;font-size:17px">📖 게임 설명서 보기</a></p><p id="err" class="mu"></p>';
  $('#jn').onclick=async()=>{const n=$('#nm').value.trim();if(!n){$('#err').textContent='이름을 입력해 주세요.';return}
   const s=await db.doc('rooms/'+c).get();if(!s.exists){$('#err').textContent='없는 방 코드입니다.';return}
   myName=n;try{localStorage.setItem('tg_name',n)}catch(e){}
@@ -176,7 +176,7 @@ function render(soft){
  lastKey=key;document.body.classList.toggle('pc',host);if(stopGame){stopGame();stopGame=null}
  const g=gm(ord[S.gi]);
  const menuH=(host&&S.phase==='game')?'<div class="card host"><p class="mu" style="margin:0 0 8px">진행자 메뉴</p><div class="row">'+(S.gs!=='result'?'<button id="sk">⏭ 이 게임 건너뛰기</button>':'')+'<button id="en">■ 게임 종료</button></div></div>':'';
- let h='<div class="mu">방 '+code+' · v15'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
+ let h='<div class="mu">방 '+code+' · v16 · <a href="manual.html" target="_blank" rel="noopener" style="color:var(--pr)">📖 설명서</a>'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
  if(S.phase==='lobby'){
   h+='<h1>대기실</h1>'+(host?'<div class="hl"><div>':'');
   if(host){
