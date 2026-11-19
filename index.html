@@ -170,7 +170,7 @@ const nTeamed=()=>Object.keys(S.teams).length;
 function render(soft){
  if(!S)return;
  const host=S.host===uid,my=S.teams[uid],ord=S.order||GAMES.map(g=>g.id);
- const key=[S.phase,S.gi,S.gs,S.n,S.rd,my,ord.join('|'),S.pm?1:0,S.at||0].join();
+ const key=[S.phase,S.gi,S.gs,S.n,S.rd,my,ord.join('|'),S.pm?1:0,S.at||0,JSON.stringify(S.teams||{}),JSON.stringify(players.map(p=>[p.id,p.name]))].join();
  if(key===lastKey&&S.gs==='play'){if(dataCb)dataCb(S.g);const c=$('#cnt');if(c)c.textContent=curResults().length+' / '+nTeamed();return}
  if(soft&&key===lastKey&&S.phase==='lobby'){const l=$('#pl');if(l){l.innerHTML=plistH();$('#pn').textContent=players.length}return}
  lastKey=key;document.body.classList.toggle('pc',host);if(stopGame){stopGame();stopGame=null}
@@ -185,7 +185,7 @@ function render(soft){
   h+='<div class="card"><h2>참가자 <span id="pn">'+players.length+'</span>명</h2><div id="pl">'+plistH()+'</div></div>';
   if(host){
    h+='</div><div>';
-   h+='<div class="card host"><h2>팀 설정</h2><div class="row">'+[2,3,4].map(n=>'<button data-n="'+n+'" class="'+(S.n===n?'p':'')+'">'+n+'팀</button>').join('')+'</div><button class="w" id="as">무작위 팀 배정 / 다시 섞기</button></div>';
+   h+='<div class="card host"><h2>팀 설정</h2><div class="row">'+[2,3,4].map(n=>'<button data-n="'+n+'" class="'+(S.n===n?'p':'')+'">'+n+'팀</button>').join('')+'</div>'+teamBoardH()+'<button class="w" id="as">무작위 팀 배정 / 다시 섞기</button></div>';
    const sel=ord.filter(id=>GAMES.some(x=>x.id===id)),rest=GAMES.filter(x=>!ord.includes(x.id));
    const sb='style="flex:0 0 auto;padding:8px 12px"';
    const rowH=(id,i,btn)=>'<div class="row" data-id="'+id+'" style="align-items:center;margin:6px 0;flex-wrap:nowrap;padding:6px;border:1px solid var(--bd);border-radius:10px;background:var(--card)"><span class="dh" style="cursor:grab;touch-action:none;padding:4px 8px;font-size:20px;color:var(--mu)">☰</span><span class="no" style="width:24px;font-weight:700">'+i+'</span><span style="flex:1"><b>'+esc(gm(id).name)+'</b></span>'+btn+'</div>';
@@ -218,11 +218,49 @@ function render(soft){
  app.innerHTML=h;bind(host);
 }
 function plistH(){return players.map(p=>'<span class="tag" style="background:'+(S.teams[p.id]!=null?COL[S.teams[p.id]][1]:'#888')+'">'+esc(p.name)+'</span>').join('')||'<span class="mu">아직 없음</span>'}
+function teamBoardH(){
+ const teams=S.teams||{};
+ const lane=(target,label,color,members)=>'<div data-team-target="'+target+'" style="min-height:92px;padding:10px;border:2px dashed var(--bd);border-radius:12px;background:var(--bg)"><b style="display:block;margin-bottom:8px;color:'+color+'">'+label+' ('+members.length+')</b><div style="display:flex;flex-wrap:wrap;gap:7px">'+(members.map(p=>'<span class="team-chip" data-player="'+esc(p.id)+'" style="display:inline-block;padding:8px 11px;border-radius:999px;background:'+color+';color:#fff;cursor:grab;touch-action:none;user-select:none">'+esc(p.name)+'</span>').join('')||'<span class="mu">여기로 끌어오세요</span>')+'</div></div>';
+ const lanes=Array.from({length:S.n},(_,t)=>lane(String(t),COL[t][0],COL[t][1],players.filter(p=>teams[p.id]===t)));
+ lanes.push(lane('none','미배정','#777',players.filter(p=>teams[p.id]==null)));
+ return '<p class="mu">참가자 이름표를 원하는 팀 칸으로 끌어 놓으세요. 미배정 칸에 놓으면 팀 배정이 해제됩니다.</p><div id="teamBoard" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:10px">'+lanes.join('')+'</div>';
+}
 function bind(host){
  const on_=(id,f)=>{const e=document.querySelector(id);if(e)e.onclick=f};
  if(host&&S.phase==='lobby'){try{const pa=new Audio();pa.preload='auto';pa.src='intro/opening.mp3';new Image().src='intro/opening.gif'}catch(e){}}
  if(host&&S.phase==='lobby'&&$('#qr')&&window.QRCode){new QRCode($('#qr'),{text:SHARE+'#r'+code,width:260,height:260,correctLevel:QRCode.CorrectLevel.M})}
  document.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>upd({n:+b.dataset.n,teams:{}}));
+ if(host&&S.phase==='lobby'&&$('#teamBoard')){
+  document.querySelectorAll('.team-chip').forEach(chip=>chip.onpointerdown=e=>{
+   if(e.button!==0)return;e.preventDefault();
+   const player=chip.dataset.player,startX=e.clientX,startY=e.clientY;
+   let ghost=null,target=null,moved=false;
+   const clear=()=>{
+    window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('pointercancel',cancel);
+    document.querySelectorAll('[data-team-target]').forEach(x=>x.style.outline='');
+    if(ghost)ghost.remove();chip.style.opacity='';
+   };
+   const move=ev=>{
+    if(!moved&&Math.hypot(ev.clientX-startX,ev.clientY-startY)>6){
+     moved=true;ghost=chip.cloneNode(true);ghost.style.cssText+=';position:fixed;z-index:9999;pointer-events:none;opacity:.85;transform:translate(-50%,-50%)';document.body.appendChild(ghost);chip.style.opacity='.35';
+    }
+    if(!moved)return;
+    ghost.style.left=ev.clientX+'px';ghost.style.top=ev.clientY+'px';
+    document.querySelectorAll('[data-team-target]').forEach(x=>x.style.outline='');
+    target=document.elementFromPoint(ev.clientX,ev.clientY)?.closest('[data-team-target]')||null;
+    if(target)target.style.outline='3px solid var(--pr)';
+   };
+   const up=()=>{
+    const dest=target?.dataset.teamTarget;clear();
+    if(!moved||dest==null)return;
+    const teams={...(S.teams||{})};
+    if(dest==='none')delete teams[player];else teams[player]=Number(dest);
+    if(JSON.stringify(teams)!==JSON.stringify(S.teams||{}))upd({teams});
+   };
+   const cancel=()=>clear();
+   window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('pointercancel',cancel);
+  });
+ }
  const O=()=>(S.order||[]).slice();
  const sl=$('#sl'),rl=$('#rl');
  const renum=()=>{if(sl)[...sl.querySelectorAll('[data-id]')].forEach((r,i)=>r.querySelector('.no').textContent=i+1);if(rl)[...rl.querySelectorAll('[data-id]')].forEach(r=>r.querySelector('.no').textContent='–')};
