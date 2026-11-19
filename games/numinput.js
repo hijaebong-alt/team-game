@@ -5,22 +5,21 @@ registerGame({
  id:'numinput',
  order:16,
  name:'숫자 입력 게임',
- story:"AI가 방화벽 해제 코드를 아주 잠깐 보여 주고 사라집니다. 기억해 입력한 숫자가 모일수록 방화벽이 무너집니다. 팀원 모두의 기억력을 모아 코드를 완성하세요.",
- desc:'라운드마다 3초 카운트다운 뒤에 진행자 화면에 숫자가 잠깐 나타났다 사라집니다. 잠시 뒤 내 폰에 입력창이 열리면 방금 본 숫자를 정확히 입력하세요. 5자리에서 시작해 10자리까지 한 자리씩 길어지는 6라운드이며, 숫자가 길수록 입력 시간도 늘어납니다. 입력이 끝나면 3초 기다린 뒤 정답이 공개됩니다. 한 자리라도 틀리면 오답이고, 팀원 평균으로 정답을 많이 맞힌 팀이 승리합니다. (높을수록 좋음)',
+ desc:'진행자 화면에 숫자가 잠깐 나타났다 사라집니다. 잠시 뒤 내 폰에 입력창이 열리면 방금 본 숫자를 정확히 입력하세요. 5자리에서 시작해 12자리까지 한 자리씩 길어지는 8라운드이며, 숫자가 길수록 입력 시간도 늘어납니다. 한 자리라도 틀리면 오답이고, 팀원 평균으로 정답을 많이 맞힌 팀이 승리합니다. (높을수록 좋음)',
  hi:true,
  fmt:v=>(v/10).toFixed(1)+'개 정답',
 
  /* ---- 진행자 화면: 숫자 보여주기 → 숨기기 → 입력 → 정답 공개 ---- */
  host(c){
   if(!c.onResults){c.el.innerHTML='<p style="color:#e24b4a">index.html이 예전 버전입니다. 최신 index.html을 올린 뒤 Ctrl+F5로 새로고침하세요.</p>';return}
-  const ROUNDS=6,PRE=6,GAP=1500,COUNT=3000,JUDGE=3000,REVEAL=4500;   // 라운드 수, 시작 전(초), 숨김(ms), 숫자 보이기 전 카운트다운(ms), 정답 공개 전 대기(ms), 정답 보여 주는 시간(ms)
+  const ROUNDS=8,PRE=6,GAP=1500,REVEAL=3000;                 // 라운드 수, 시작 전(초), 숨김(ms), 정답 공개(ms)
   const inputMs=len=>8000+len*700;                           // 입력 시간: 5자리 11.5초 ~ 12자리 16.4초
   const lenOf=r=>5+r;                                        // 5,6,7,...,12자리 (한 자리씩 증가)
   const showMs=len=>1000+len*350;                            // 숫자가 보이는 시간
   const COL=['#e24b4a','#378add','#c98f00','#2f9e55'],TN=['빨강','파랑','노랑','초록'];
   const mem=c.players.filter(p=>p.team!=null&&p.team<c.n);
   const cnt={},seen={};mem.forEach(p=>cnt[p.id]=0);
-  const ans={};let round=-1,num='',phase='wait',open=false,dl=0,tIn=0,curIn=10000,curSpan=3000;
+  const ans={};let round=-1,num='',phase='wait',open=false,dl=0,tIn=0,curIn=10000;
   const pub=x=>Object.assign({r:round,ph:phase,len:num.length,cnt:Object.assign({},cnt),end:false},x||{});
   c.el.innerHTML='<div style="text-align:center"><p class="mu" id="rd" style="margin:0"></p>'
    +'<div id="nm" style="font-size:88px;font-weight:800;letter-spacing:8px;min-height:120px;line-height:120px"></div>'
@@ -34,53 +33,38 @@ registerGame({
     return '<div style="margin:6px 0"><b style="color:'+COL[t]+'">'+TN[t]+'</b> <span class="mu">평균 '+av.toFixed(1)+'개 정답</span><div style="height:12px;background:var(--bd);border-radius:6px"><div style="height:100%;width:'+Math.min(100,av/ROUNDS*100)+'%;background:'+COL[t]+';border-radius:6px"></div></div></div>'}).join('');
     const e=q('#tb');if(e)e.innerHTML=h};
   const submitted=()=>Object.keys(ans[round]||{}).length;
-  const reveal=()=>{
+  const judge=()=>{
+   if(!open)return;open=false;
    const ok={};mem.forEach(p=>{const a=(ans[round]||{})[p.id];const g=a!==undefined&&a.trim()===num;ok[p.id]=g;if(g)cnt[p.id]=(cnt[p.id]||0)+1});
    phase='reveal';showNum(num);
    const n=Object.values(ok).filter(Boolean).length;
    T('#msg','정답! '+n+' / '+mem.length+'명 맞혔어요');q('#bf').style.width='100%';
    c.set(pub({ans:num,ok}));bars();
-   c.after(next,REVEAL);                                    // 정답을 충분히 보여 준 뒤 다음 라운드로
-  };
-  const close=()=>{                                          // 입력 마감 → 정답 공개 전 잠깐 기다림(카운트다운)
-   if(!open)return;open=false;
-   phase='judging';dl=NOW()+JUDGE;curSpan=JUDGE;
-   T('#msg','🔍 정답 공개까지…');showNum(String(Math.ceil(JUDGE/1000)));q('#bf').style.width='0%';
-   c.set(pub({dl}));
-   c.after(reveal,JUDGE);
+   c.after(next,REVEAL);
   };
   const next=()=>{
    round++;
    if(round>=ROUNDS){phase='end';open=false;showNum('🎉');T('#msg','끝! 결과 공개를 누르세요');T('#rd','');q('#bf').style.width='100%';c.set(pub({end:true}));bars();return}
    const len=lenOf(round);num=String(1+Math.floor(Math.random()*9));for(let i=1;i<len;i++)num+=Math.floor(Math.random()*10);
-   T('#rd','라운드 '+(round+1)+' / '+ROUNDS+' · '+len+'자리');
-   phase='count';dl=NOW()+COUNT;curSpan=COUNT;showNum(String(Math.ceil(COUNT/1000)));T('#msg','곧 숫자가 나와요! 집중하세요 👀');q('#bf').style.width='0%';
-   c.set(pub({dl}));
+   phase='show';T('#rd','라운드 '+(round+1)+' / '+ROUNDS+' · '+len+'자리');showNum(num);T('#msg','숫자를 기억하세요! 👀');q('#bf').style.width='0%';
+   c.set(pub());
    c.after(()=>{
-    phase='show';showNum(num);T('#msg','숫자를 기억하세요! 👀');q('#bf').style.width='0%';
-    c.set(pub());
+    phase='gap';showNum('·  ·  ·');T('#msg','잠깐… 기억하세요');c.set(pub());
     c.after(()=>{
-     phase='gap';showNum('·  ·  ·');T('#msg','잠깐… 기억하세요');c.set(pub());
-     c.after(()=>{
-      phase='input';open=true;curIn=inputMs(len);dl=NOW()+curIn;showNum('❓');T('#msg','입력하세요!');c.set(pub({dl}));
-      tIn=c.after(close,curIn+700);
-     },GAP);
-    },showMs(len));
-   },COUNT);
+     phase='input';open=true;curIn=inputMs(len);dl=NOW()+curIn;showNum('❓');T('#msg','입력하세요!');c.set(pub({dl}));
+     tIn=c.after(judge,curIn+700);
+    },GAP);
+   },showMs(len));
   };
   bars();
   let pre=PRE;T('#msg','시작까지 '+pre+'초');
   const tk=c.every(()=>{pre--;if(pre>0){T('#msg','시작까지 '+pre+'초');return}clearInterval(tk);next()},1000);
-  c.every(()=>{
-   const left=dl-NOW();
-   if(phase==='input'&&open)q('#bf').style.width=Math.max(0,Math.min(100,100-left/curIn*100))+'%';
-   else if(phase==='count'||phase==='judging'){showNum(String(Math.max(1,Math.ceil(left/1000))));q('#bf').style.width=Math.max(0,Math.min(100,100-left/curSpan*100))+'%'}
-  },100);
+  c.every(()=>{if(phase==='input'&&open){const left=dl-NOW();q('#bf').style.width=Math.max(0,Math.min(100,100-left/curIn*100))+'%'}},100);
   c.onResults(rs=>rs.forEach(r=>{
    if(typeof r.k!=='number'||r.r==null||r.k<=(seen[r.uid]||0))return;
    seen[r.uid]=r.k;
    if(open&&r.r===round){(ans[round]=ans[round]||{})[r.uid]=String(r.ans==null?'':r.ans);
-    if(submitted()>=mem.length){clearTimeout(tIn);c.after(close,300)}}      // 모두 제출하면 바로 마감
+    if(submitted()>=mem.length){clearTimeout(tIn);c.after(judge,300)}}      // 모두 제출하면 바로 마감
   }));
  },
 
@@ -100,8 +84,6 @@ registerGame({
    const b=box();if(!b)return;
    if(!g||g.r<0){b.innerHTML='<p class="mu" style="text-align:center">진행자 화면의 숫자를 잘 보세요!</p>';return}
    const head='<p class="mu" style="text-align:center">라운드 '+(g.r+1)+' · 지금까지 '+((g.cnt&&g.cnt[c.uid])||0)+'개 맞힘</p>';
-   if(g.ph==='count'){b.innerHTML=head+'<p class="big">🔔</p><p class="mu" style="text-align:center">곧 숫자가 나와요! 진행자 화면을 보세요</p><p class="big" id="cdn" style="font-size:56px"></p>';return}
-   if(g.ph==='judging'){b.innerHTML=head+'<p class="big">🔍</p><p class="mu" style="text-align:center">정답 공개까지…</p><p class="big" id="cdn" style="font-size:56px"></p>';return}
    if(g.ph==='show'){b.innerHTML=head+'<p class="big">👀</p><p class="mu" style="text-align:center">진행자 화면의 숫자를 기억하세요! ('+g.len+'자리)</p>';return}
    if(g.ph==='gap'){b.innerHTML=head+'<p class="big">🤔</p><p class="mu" style="text-align:center">곧 입력창이 열려요…</p>';return}
    if(g.ph==='input'){
@@ -120,7 +102,6 @@ registerGame({
   const finish=()=>{if(sent)return;sent=true;c.stop();c.submit(((g&&g.cnt&&g.cnt[c.uid])||0)*10)};
   c.watch(gg=>{g=gg;if(g&&g.end){finish();return}draw()});
   c.every(()=>{
-   if(g&&(g.ph==='count'||g.ph==='judging')&&g.dl){const e=$('#cdn');if(e)e.textContent=Math.max(1,Math.ceil((g.dl-NOW())/1000))}
    if(!g||g.ph!=='input'||!g.dl)return;
    const left=g.dl-NOW(),cd=$('#cd');
    if(cd)cd.textContent='남은 시간 '+Math.max(0,Math.ceil(left/1000))+'초';
