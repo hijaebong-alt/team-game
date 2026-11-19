@@ -1,52 +1,7 @@
 /* 위아래로 움직이기 — 센서(흔들기) 게임. 진행자 화면에는 팀별 로켓 높이로 현재 진행 상태를 비교해서 보여 줌 */
 (function(){
-const base=shakeGame("updown","위아래로 움직이기","y","위아래","스마트폰 화면을 세로로 잡고 10초 동안 빠르게 위아래로 움직이세요. 센서가 추정한 이동이 20cm 이상일 때 인정합니다. 좌우 흔들기는 점수에 포함되지 않습니다.",["▲ 위","아래 ▼"]);
-registerGame(Object.assign(base,{order:2,story:"AI가 장악한 감시 위성이 지구 전체를 내려다보고 있습니다. 인류의 로켓을 쏘아 올려 위성을 무력화해야 합니다. 폰을 위아래로 움직여 우리 팀 로켓의 추진력을 모으세요!",
- run(c){
-  c.ready(async()=>{
-   const allowed=await askMotion('motion');
-   if(!allowed||!window.DeviceMotionEvent){
-    c.ga.innerHTML='<p class="big">센서를 사용할 수 없어요</p><p>이 게임은 스마트폰 움직임 센서가 필요합니다. 브라우저의 동작 및 방향 권한을 허용한 뒤 다시 참여해 주세요.</p>';
-    c.submit(0);return;
-   }
-   let count=0,lastAt=0,startedAt=0,lastLive=0,gravity=[null,null,null],filtered=[0,0,0],velocity=0,position=0,direction=0,segmentAt=0,waiting=true,finished=false;
-   c.ga.innerHTML='<p class="big" id="tl">10</p><p class="big" id="sc">0</p><p class="mu" id="motionHint">움직임 센서 연결 중…</p>';
-   const score=()=>{const e=c.ga.querySelector('#sc');if(e)e.textContent=count;const t=performance.now();if(t-lastLive>400){lastLive=t;c.live(count)}};
-   const end=()=>{if(finished)return;finished=true;c.stop();c.submit(count)};
-   c.listen('devicemotion',e=>{
-    if(finished)return;
-    const now=performance.now();
-    const axes=['x','y','z'];let raw,linear=true;
-    if(e.acceleration&&axes.every(k=>Number.isFinite(e.acceleration[k])))raw=axes.map(k=>e.acceleration[k]);
-    else if(e.accelerationIncludingGravity&&axes.every(k=>Number.isFinite(e.accelerationIncludingGravity[k]))){raw=axes.map(k=>e.accelerationIncludingGravity[k]);linear=false}
-    else return;
-    if(waiting){waiting=false;startedAt=now;lastAt=now;segmentAt=now;if(!linear)gravity=raw.slice();const h=c.ga.querySelector('#motionHint');if(h)h.textContent='세로로 잡고 빠르게 위아래로 움직이세요 · 좌우 흔들기는 미인정';return}
-    const dt=Math.min(.06,Math.max(.008,(now-lastAt)/1000));lastAt=now;
-    const a=raw.map((v,i)=>{
-     if(!linear){if(gravity[i]==null)gravity[i]=v;const lin=v-gravity[i];gravity[i]+=((v-gravity[i])*dt)/(.7+dt);return lin}
-     return v;
-    });
-    a.forEach((v,i)=>{filtered[i]+=(v-filtered[i])*Math.min(1,dt/.045);if(Math.abs(filtered[i])<.22)filtered[i]=0});
-    const vertical=filtered[1],side=Math.hypot(filtered[0],filtered[2]);
-    const rr=e.rotationRate,turning=rr&&[rr.alpha,rr.beta,rr.gamma].some(v=>Number.isFinite(v)&&Math.abs(v)>35);
-    // Require a strong Y-axis signal. X/Z movement and rapid phone rotation cancel a candidate.
-    if(turning||Math.abs(vertical)<.55||Math.abs(vertical)<side*1.8){velocity=0;position=0;direction=0;segmentAt=now}
-    else{
-     const nextVelocity=velocity+vertical*dt;
-     position+=(velocity+nextVelocity)*.5*dt;
-     const nextDirection=Math.abs(nextVelocity)>.035?Math.sign(nextVelocity):direction;
-     if(direction&&nextDirection&&nextDirection!==direction){
-      const duration=now-segmentAt;
-      if(duration>=100&&duration<=1500&&Math.abs(position)>=.20){count++;score()}
-      position=0;velocity=0;segmentAt=now;direction=nextDirection;
-     }else{velocity=nextVelocity;if(!direction&&nextDirection){direction=nextDirection;segmentAt=now}}
-    }
-    if(now-startedAt>=10000){end();return}
-    const timer=c.ga.querySelector('#tl');if(timer)timer.textContent=Math.max(0,Math.ceil(10-(now-startedAt)/1000));
-   });
-   c.after(()=>{if(waiting&&!finished){finished=true;c.stop();c.ga.innerHTML='<p class="big">센서 신호가 없어요</p><p>스마트폰에서 이 페이지를 열고 동작 센서 권한을 허용해 주세요. 이번 기록은 0회로 제출됩니다.</p>';c.submit(0)}},3000);
-  });
- },
+const base=shakeGame("updown","위아래로 움직이기","y","위아래","10초 동안 스마트폰을 위아래로 움직이세요. 센서가 안 되면 위/아래 버튼을 번갈아 누르는 방식으로 바뀝니다. 진행자 화면에서는 팀별 로켓이 움직인 만큼 높이 올라갑니다. (많을수록 좋음)",["▲ 위","아래 ▼"]);
+registerGame(Object.assign(base,{order:2,
  /* ---- 진행자 화면: 팀 평균 움직인 횟수에 따라 로켓이 올라감 ---- */
  host(c){
   if(!c.onResults){c.el.innerHTML='<p style="color:#e24b4a">index.html이 예전 버전입니다. 최신 index.html을 올린 뒤 Ctrl+F5로 새로고침하세요.</p>';return}
@@ -77,4 +32,3 @@ registerGame(Object.assign(base,{order:2,story:"AI가 장악한 감시 위성이
  }
 }));
 })();
-
