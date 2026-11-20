@@ -176,7 +176,7 @@ function render(soft){
  lastKey=key;document.body.classList.toggle('pc',host);if(stopGame){stopGame();stopGame=null}
  const g=gm(ord[S.gi]);
  const menuH=(host&&S.phase==='game')?'<div class="card host"><p class="mu" style="margin:0 0 8px">진행자 메뉴</p><div class="row">'+(S.gs!=='result'?'<button id="sk">⏭ 이 게임 건너뛰기</button>':'')+'<button id="en">■ 게임 종료</button></div></div>':'';
- let h='<div class="mu">방 '+code+' · v17 · <a href="manual.html" target="_blank" rel="noopener" style="color:var(--pr)">📖 설명서</a>'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
+ let h='<div class="mu">방 '+code+' · v18 · <a href="manual.html" target="_blank" rel="noopener" style="color:var(--pr)">📖 설명서</a>'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
  if(S.phase==='lobby'){
   h+='<h1>대기실</h1>'+(host?'<div class="hl"><div>':'');
   if(host){
@@ -202,16 +202,18 @@ function render(soft){
    h+='<div class="card" style="background:linear-gradient(135deg,#0b1230,#2a3b8f);color:#fff;border-color:#2a3b8f"><p style="margin:0 0 6px;font-weight:700;color:#9db7ff">📡 상황</p><p class="intro" style="margin:0;color:#fff">'+esc(story)+'</p></div><div class="card"><p style="margin:0 0 6px;font-weight:700;color:var(--pr)">🎮 게임 방법</p><p class="intro" style="margin:0">'+g.desc+'</p></div>'+(host?(pracOn(ord[S.gi])?'<div class="row"><button class="p" id="sp">🧪 시범 게임 시작</button><button id="st">▶ 본 게임 바로 시작</button></div>':'<button class="p w" id="st">▶ 본 게임 시작</button>'):'<p class="mu">'+(pracOn(ord[S.gi])?'진행자가 시범 게임을 시작하기를 기다리는 중…':'진행자가 시작하기를 기다리는 중…')+'</p>')}
   else if(S.gs==='play'){h+=host?'<div class="pg"><div class="card host" style="min-height:300px">'+(g.host?'<div class="mu" style="margin:0 0 8px;text-align:left">📡 '+esc(g.story||DEFSTORY)+'</div>':'')+'<div id="hg">'+(g.host?'':storyBox(g,true)+'<p class="mu" style="margin:0 0 4px">🎮 게임 방법</p><p class="intro" style="margin:0">'+g.desc+'</p><p class="mu">참가자들이 폰으로 진행 중입니다. 결과 공개를 눌러 주세요.</p>')+'</div></div><div><div class="card host"><p style="margin:0">참가자들이 게임 중입니다.</p><p class="mu">제출 <b id="cnt" style="font-size:22px">'+curResults().length+' / '+nTeamed()+'</b></p><button class="p w" id="fin">결과 공개</button></div>'+menuH+'</div></div>':'<div class="card" id="ga"></div>'}
   else if(S.pm){const a=S.pr||{avg:[]};
-   h+='<div class="card"><p class="mu" style="margin:0 0 6px">시범 결과 · 점수에 반영되지 않아요</p><table><tr><th>팀</th><th>평균</th></tr>'+Array.from({length:S.n},(_,i)=>'<tr><td>'+tagH(i)+'</td><td>'+(a.avg&&a.avg[i]>=0?g.fmt(a.avg[i]):'-')+'</td></tr>').join('')+'</table></div>';
+   h+='<div class="card"><p class="mu" style="margin:0 0 6px">시범 결과 · 점수에 반영되지 않아요</p><table><tr><th>팀</th><th>평균</th></tr>'+Array.from({length:S.n},(_,i)=>'<tr><td>'+tagH(i)+'</td><td>'+(a.avg&&a.avg[i]>=0?fmtAvg(g,a.avg[i]):'-')+'</td></tr>').join('')+'</table></div>';
    const mine=curResults().find(r=>r.uid===uid);if(mine)h+='<p class="mu">내 기록: '+g.fmt(mine.v)+'</p>';
    h+=host?'<div class="row"><button id="rp">🔁 시범 한 번 더</button><button class="p" id="mn">▶ 본 게임 시작</button></div>':'<p class="mu">진행자가 본 게임을 시작하기를 기다리는 중…</p>'}
   else{const a=S['h'+S.gi]||{avg:[],add:[]};
-   h+='<div class="card"><table><tr><th>팀</th><th>평균</th><th>획득</th><th>누적</th></tr>'+Array.from({length:S.n},(_,i)=>'<tr><td>'+tagH(i)+'</td><td>'+(a.avg[i]>=0?g.fmt(a.avg[i]):'-')+'</td><td>+'+(a.add[i]||0)+'</td><td><b>'+S.pts[i]+'</b></td></tr>').join('')+'</table></div>';
+   const tie=i=>a.avg[i]>=0&&a.avg.filter(x=>x===a.avg[i]).length>1,allTie=a.avg.length>1&&a.avg.every(x=>x>=0&&x===a.avg[0]);
+   h+='<div class="card">'+(allTie?'<p style="margin:0 0 8px;font-weight:700">🤝 무승부! 모든 팀이 1점씩 받아요.</p>':'')+'<table><tr><th>팀</th><th>평균</th><th>획득</th><th>누적</th></tr>'+Array.from({length:S.n},(_,i)=>'<tr><td>'+tagH(i)+(tie(i)&&!allTie?' <span class="mu">🤝 동점</span>':'')+'</td><td>'+(a.avg[i]>=0?fmtAvg(g,a.avg[i]):'-')+'</td><td>+'+(a.add[i]||0)+'</td><td><b>'+S.pts[i]+'</b></td></tr>').join('')+'</table></div>';
    const mine=curResults().find(r=>r.uid===uid);if(mine)h+='<p class="mu">내 기록: '+g.fmt(mine.v)+'</p>';
    h+=host?'<button class="p w" id="nx">'+(S.gi+1<ord.length?'다음 게임':'최종 결과 보기')+'</button>':'<p class="mu">진행자가 다음으로 넘기기를 기다리는 중…</p>'}
  }else{
   const rk=Array.from({length:S.n},(_,i)=>i).sort((a,b)=>S.pts[b]-S.pts[a]);
-  h+='<h1>최종 결과</h1><div class="card"><div class="big">'+tagH(rk[0])+' 우승!</div></div><div class="card"><table>'+rk.map((t,i)=>'<tr><td>'+(i+1)+'위</td><td>'+tagH(t)+'</td><td><b>'+S.pts[t]+'점</b></td></tr>').join('')+'</table></div>';
+  const top=rk.filter(t=>S.pts[t]===S.pts[rk[0]]);
+  h+='<h1>최종 결과</h1><div class="card"><div class="big">'+top.map(tagH).join(' ')+(top.length>1?' 공동 우승!':' 우승!')+'</div></div><div class="card"><table>'+rk.map((t,i)=>'<tr><td>'+(i+1)+'위</td><td>'+tagH(t)+'</td><td><b>'+S.pts[t]+'점</b></td></tr>').join('')+'</table></div>';
   h+='<div class="card"><h2>게임별 점수</h2><table>'+ord.map((id,gi)=>{const a=S['h'+gi];return '<tr><td>'+gm(id).name+'</td><td class="mu">'+(a?a.add.slice(0,S.n).map((p,i)=>COL[i][0]+' +'+p).join(' · '):'-')+'</td></tr>'}).join('')+'</table></div>';
   if(host)h+='<button class="w" id="rs">점수 초기화 후 다시 하기</button>';
  }
@@ -303,12 +305,16 @@ function bind(host){
  if(!host&&S.phase==='game'&&S.gs==='play')runGame();
  if(host&&S.phase==='game'&&S.gs==='play')runHost();
 }
+function fmtAvg(g,v){                                  // 평균 기록을 소수 둘째 자리까지 표시
+ try{const t=v.toFixed(2);return g.fmt({valueOf:()=>t,toString:()=>t})}catch(e){return g.fmt(v)}
+}
 function finish(){
  const g=gm(S.order[S.gi]),rs=curResults(),avg=[],add=[],pts=S.pts.slice();
- for(let i=0;i<S.n;i++){const v=rs.filter(r=>r.team===i).map(r=>r.v);avg[i]=v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length):-1;add[i]=0}
+ for(let i=0;i<S.n;i++){const v=rs.filter(r=>r.team===i).map(r=>r.v);avg[i]=v.length?Math.round(v.reduce((a,b)=>a+b,0)/v.length*100)/100:-1;add[i]=0}
  if(S.pm){upd({gs:'result',pr:{avg}});return}      // 시범 게임: 점수에 반영하지 않음
  const rk=avg.map((a,i)=>i).filter(i=>avg[i]>=0).sort((a,b)=>g.hi?avg[b]-avg[a]:avg[a]-avg[b]);
- rk.forEach((t,r)=>{add[t]=S.n-r;pts[t]+=add[t]});
+ // 소수 둘째 자리까지 같은 팀은 동점: 같은 점수를 받고, 점수는 동점 팀이 차지한 자리 중 가장 낮은 값 (모든 팀이 비기면 모두 1점)
+ for(let r=0;r<rk.length;){let e=r;while(e+1<rk.length&&avg[rk[e+1]]===avg[rk[r]])e++;const pt=S.n-e;for(let k=r;k<=e;k++){add[rk[k]]=pt;pts[rk[k]]+=pt}r=e+1}
  upd({gs:'result',pts,['h'+S.gi]:{avg,add}});
 }
 function runHost(){
