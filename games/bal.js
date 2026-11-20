@@ -6,7 +6,7 @@ registerGame({
  story:"AI가 조종하는 레이저가 움직이는 안전 구역을 비추고 있습니다. 폰을 기울여 파란 공을 안전 구역 안에 계속 머물게 하세요. 균형을 잃으면 AI에게 들킵니다.",
  desc:"15초 동안 스마트폰을 좌우로 기울여 파란 공을 움직이는 초록 영역 안에 머무르세요. 센서가 안 되면 ◀ ▶ 버튼으로 조작합니다. (오래 머물수록 좋음)",
  hi:true, // true: 높은 값이 우승, false: 낮은 값이 우승
- fmt:v=>(v/10)+'초',
+ fmt:v=>(v/10).toFixed(2)+'초',
  host(c){
   if(!c.onResults){c.el.innerHTML='<p style="color:#e24b4a">index.html이 예전 버전입니다. 최신 index.html을 올린 뒤 Ctrl+F5로 새로고침하세요.</p>';return}
   const COL=['#e24b4a','#378add','#c98f00','#2f9e55'],TN=['빨강','파랑','노랑','초록'];
