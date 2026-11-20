@@ -86,13 +86,14 @@ registerGame({
 
  /* ---- 참가자 화면: 입력창에 숫자 입력 ---- */
  run(c){
-  let g=null,k=0,sent=false;const mine={};
+  let g=null,k=0,sent=false,lastLiveR=-1;const mine={};
+  const myScore=()=>((g&&g.cnt&&g.cnt[c.uid])||0)*10;          // 진행자 화면의 실시간 랭킹용: 지금까지 맞힌 개수 × 10
   c.ga.innerHTML='<div id="bx"></div>';
   c.live(0);
   const box=()=>$('#bx');
   const submit=()=>{
    const el=$('#an');if(!g||g.ph!=='input'||mine[g.r]!==undefined)return;
-   const a=el?el.value.trim():'';mine[g.r]=a;k++;c.live(0,{r:g.r,ans:a,k});
+   const a=el?el.value.trim():'';mine[g.r]=a;k++;c.live(myScore(),{r:g.r,ans:a,k});
    try{navigator.vibrate(30)}catch(x){}
    draw();
   };
@@ -118,7 +119,9 @@ registerGame({
    }
   };
   const finish=()=>{if(sent)return;sent=true;c.stop();c.submit(((g&&g.cnt&&g.cnt[c.uid])||0)*10)};
-  c.watch(gg=>{g=gg;if(g&&g.end){finish();return}draw()});
+  c.watch(gg=>{g=gg;if(g&&g.end){finish();return}
+   if(g&&g.ph==='reveal'&&lastLiveR!==g.r){lastLiveR=g.r;c.live(myScore(),{r:g.r,ans:mine[g.r]==null?'':mine[g.r],k})}    // 정답 공개 때마다 내 점수 갱신
+   draw()});
   c.every(()=>{
    if(g&&(g.ph==='count'||g.ph==='judging')&&g.dl){const e=$('#cdn');if(e)e.textContent=Math.max(1,Math.ceil((g.dl-NOW())/1000))}
    if(!g||g.ph!=='input'||!g.dl)return;
