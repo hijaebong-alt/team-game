@@ -1,13 +1,13 @@
-/* 만세 게임: 진행자 화면의 "하나·둘·셋 만세!" 구호에 맞춰 폰 마이크에 대고 만세를 외치면, 목소리 크기를 팀별로 비교하는 게임 */
+/* 함성 게임: 진행자 화면의 "하나·둘·셋 함성!" 구호에 맞춰 폰 마이크에 대고 힘껏 함성을 지르면, 목소리 크기를 팀별로 비교하는 게임 */
 (function(){
 const NOW=()=>typeof serverNow==='function'?serverNow():Date.now();
-const ROUNDS=3,CYCLE=8000,SHOUT0=3000,SHOUT1=6000;       // 만세 외치는 횟수, 한 번의 길이(ms), 외치는 구간(구호 후 3~6초)
+const ROUNDS=3,CYCLE=8000,SHOUT0=3000,SHOUT1=6000;       // 함성 지르는 횟수, 한 번의 길이(ms), 외치는 구간(구호 후 3~6초)
 registerGame({
  id:'manse',
  order:19,
- name:'만세 게임',
- story:'AI에게 인류의 승리를 선언할 시간입니다! 사람들의 함성은 AI의 방어 시스템을 흔들 수 있습니다. 팀원 모두의 만세 소리를 하나로 모아 가장 큰 함성을 터뜨리세요!',
- desc:'진행자 화면에 "하나 · 둘 · 셋 · 만세!" 구호가 나옵니다. 만세! 구간(3초) 동안 폰 마이크에 대고 가장 큰 소리로 만세를 외치세요. 3번 외친 최고 소리 크기가 점수(최대 300점)이고, 팀 평균이 높은 팀이 승리합니다. 처음에 마이크 허용 창이 뜨면 허용을 눌러 주세요. 마이크를 입 가까이 대고, 큰 소리일수록 높은 점수입니다. (높을수록 좋음)',
+ name:'함성 게임',
+ story:'AI에게 인류의 승리를 선언할 시간입니다! 사람들의 함성은 AI의 방어 시스템을 흔들 수 있습니다. 팀원 모두의 목소리를 하나로 모아 가장 큰 함성을 터뜨리세요!',
+ desc:'진행자 화면에 "하나 · 둘 · 셋 · 함성!" 구호가 나옵니다. 함성! 구간(3초) 동안 폰 마이크에 대고 가장 큰 소리로 힘껏 소리를 지르세요. 3번 외친 최고 소리 크기가 점수(최대 300점)이고, 팀 평균이 높은 팀이 승리합니다. 처음에 마이크 허용 창이 뜨면 허용을 눌러 주세요. 마이크를 입 가까이 대고, 큰 소리일수록 높은 점수입니다. (높을수록 좋음)',
  hi:true,
  fmt:v=>v+'점',
 
@@ -60,18 +60,18 @@ registerGame({
     return;
    }
    const ph=tt-r*CYCLE,win=ph>=SHOUT0&&ph<SHOUT1;
-   if(r!==curR){curR=r;for(let t=0;t<c.n;t++){now[t]=0;lastR[t]=0}}      // 새 만세가 시작되면 미터를 비움
-   T('#rd','만세 '+(r+1)+' / '+ROUNDS);
+   if(r!==curR){curR=r;for(let t=0;t<c.n;t++){now[t]=0;lastR[t]=0}}      // 새 함성이 시작되면 미터를 비움
+   T('#rd','함성 '+(r+1)+' / '+ROUNDS);
    const beat=ph<1000?0:ph<2000?1:ph<3000?2:win?3:4,key=r*10+beat;
    if(key!==lastBeat){lastBeat=key;
-    T('#cue',['하나','둘','셋','🙌 만세!!!','결과'][beat]);
+    T('#cue',['하나','둘','셋','🙌 함성!!!','결과'][beat]);
     if(beat<3)tone(600,.08);else if(beat===3){tone(880,.35,.16);tone(1320,.35,.12)}}
    if(ph>=SHOUT1+200&&!closed[r]){closed[r]=true;for(let t=0;t<c.n;t++)lastR[t]=avgOf(t,'pk',rs0)}   // 이번 라운드의 평균 최고 소리 확정
    draw(win);
   },60);
  },
 
- /* ---- 참가자 화면: 마이크에 대고 만세 외치기 ---- */
+ /* ---- 참가자 화면: 마이크에 대고 함성 지르기 ---- */
  run(c){
   const RANGE=45;                                            // 주변 소음보다 이만큼(dB) 크면 100점
   c.ready(async()=>{
@@ -81,7 +81,7 @@ registerGame({
    c.ga.innerHTML='<p class="mu" id="st" style="text-align:center">마이크를 준비하는 중…</p><p class="big" id="cue" style="margin:4px 0;height:56px"></p>'
     +'<div style="height:26px;background:var(--bd);border-radius:13px;overflow:hidden"><div id="mt" style="height:100%;width:0;background:linear-gradient(90deg,#2f9e55,#f2c200,#e24b4a);transition:width .08s"></div></div>'
     +'<p class="big" id="lv" style="font-size:44px;margin:8px 0 0">0</p><p class="mu" id="ms" style="text-align:center;margin:0"></p>'
-    +'<div id="tp" style="display:none;margin-top:10px;height:130px;border:2px dashed var(--bd);border-radius:14px;align-items:center;justify-content:center;color:var(--mu);touch-action:manipulation;user-select:none">마이크를 쓸 수 없어요 · 만세! 구간에 여기를 연타하세요</div>';
+    +'<div id="tp" style="display:none;margin-top:10px;height:130px;border:2px dashed var(--bd);border-radius:14px;align-items:center;justify-content:center;color:var(--mu);touch-action:manipulation;user-select:none">마이크를 쓸 수 없어요 · 함성! 구간에 여기를 연타하세요</div>';
    const T=(id,t)=>{const e=$(id);if(e&&e.textContent!==t)e.textContent=t};
    const stopMic=()=>{try{stream&&stream.getTracks().forEach(t=>t.stop())}catch(e){}try{ac&&ac.close()}catch(e){}};
    const finish=()=>{if(sent)return;sent=true;const total=peaks.reduce((a,b)=>a+b,0);c.stop();stopMic();c.submit(Math.round(total))};
@@ -117,14 +117,14 @@ registerGame({
     if(r>=g.rounds){if(tt>g.rounds*g.cycle+1500)finish();return}
     const ph=tt-r*g.cycle,win=ph>=SHOUT0&&ph<SHOUT1;
     if(r!==curR){curR=r;cur=0}
-    T('#cue',ph<1000?'하나':ph<2000?'둘':ph<3000?'셋':win?'🙌 만세!!!':'결과');
+    T('#cue',ph<1000?'하나':ph<2000?'둘':ph<3000?'셋':win?'🙌 함성!!!':'결과');
     if(win){
      cur=Math.max(cur,lvl);
      if(performance.now()-lastLive>300){lastLive=performance.now();c.live(Math.round(total+cur),{r,lv:Math.round(lvl),pk:Math.round(cur)})}   // 진행자 화면의 실시간 비교용
     }else if(ph>=SHOUT1&&!closed[r]){
      closed[r]=true;peaks[r]=Math.round(cur);
      c.live(Math.round(peaks.reduce((a,b)=>a+b,0)),{r,lv:0,pk:peaks[r]});
-     T('#ms','만세 '+(r+1)+' 최고 소리: '+peaks[r]+'점');
+     T('#ms','함성 '+(r+1)+' 최고 소리: '+peaks[r]+'점');
     }
    },50);
   });
