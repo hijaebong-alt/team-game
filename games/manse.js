@@ -73,7 +73,7 @@ registerGame({
 
  /* ---- 참가자 화면: 마이크에 대고 함성 지르기 ---- */
  run(c){
-  const RANGE=45;                                            // 주변 소음보다 이만큼(dB) 크면 100점
+  const RANGE=60;                                            // 주변 소음보다 이만큼(dB) 크면 100점
   c.ready(async()=>{
    let g=null,stream=null,an=null,ac=null,buf=null,tap=false,sent=false;
    let baseSum=0,baseN=0,quiet=0;const hist=[],peaks=[];
