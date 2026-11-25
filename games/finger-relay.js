@@ -29,7 +29,7 @@ host(c){
   const pub=end=>({t0,leg:LEG,limit:LIMIT,k:K,ord:O(run.map(m=>m.map(p=>p.id))),cur:O(cur),end:!!end,
     sc:end?run.map((m,t)=>fin[t]?1000000-Math.round(fin[t]/10):Math.round(prog(t)*1000)):[]});
   c.set(pub(false));
-  c.el.innerHTML='<div style="text-align:center"><p class="big" id="tm" style="margin:0"></p><p class="mu" style="margin:0">팀당 '+K+'명이 이어달립니다 · 한 구간 = 폰 '+LEG+'번 흔들기</p>'
+  c.el.innerHTML='<div style="text-align:center"><p class="big" id="tm" style="margin:0"></p><p class="mu" style="margin:0">팀당 '+K+'명이 이어달립니다 · 한 구간 = 폰 '+LEG+'번 터치</p>'
    +'<div style="margin-top:8px">'+run.map((m,t)=>'<div style="text-align:left;margin:12px 0">'
     +'<b style="color:'+COL[t]+';font-size:20px">'+TN[t]+' 팀</b> <span id="pg'+t+'" class="mu"></span> <span id="rk'+t+'" style="font-weight:700"></span>'
     +'<div style="position:relative;height:104px;margin-top:4px;border-radius:12px;background:linear-gradient(#d9c796,#c9b680);border:2px solid '+COL[t]+'">'
