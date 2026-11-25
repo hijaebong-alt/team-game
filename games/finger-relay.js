@@ -29,7 +29,7 @@ host(c){
   const pub=end=>({t0,leg:LEG,limit:LIMIT,k:K,ord:O(run.map(m=>m.map(p=>p.id))),cur:O(cur),end:!!end,
     sc:end?run.map((m,t)=>fin[t]?1000000-Math.round(fin[t]/10):Math.round(prog(t)*1000)):[]});
   c.set(pub(false));
-  c.el.innerHTML='<div style="text-align:center"><p class="big" id="tm" style="margin:0"></p><p class="mu" style="margin:0">팀당 '+K+'명이 이어달립니다 · 한 구간 = 폰 '+LEG+'번 터치</p>'
+  c.el.innerHTML='<div style="text-align:center"><p class="big" id="tm" style="margin:0"></p><p class="mu" style="margin:0">팀당 '+K+'명이 이어달립니다 · 한 구간 = 폰 '+LEG+'번 흔들기</p>'
    +'<div style="margin-top:8px">'+run.map((m,t)=>'<div style="text-align:left;margin:12px 0">'
     +'<b style="color:'+COL[t]+';font-size:20px">'+TN[t]+' 팀</b> <span id="pg'+t+'" class="mu"></span> <span id="rk'+t+'" style="font-weight:700"></span>'
     +'<div style="position:relative;height:104px;margin-top:4px;border-radius:12px;background:linear-gradient(#d9c796,#c9b680);border:2px solid '+COL[t]+'">'
@@ -93,9 +93,10 @@ host(c){
  run(c){
   c.ready(()=>{
    let g=null,count=0,doneLeg=false,sent=false,lastLive=-1000;
+   c.ga.style.touchAction='none';c.ga.style.userSelect='none';c.ga.style.webkitUserSelect='none';
    c.ga.innerHTML='<p class="mu" id="st" style="text-align:center">진행자 화면을 보세요!</p><p class="big" id="ct" style="margin:2px 0">…</p>'
     +'<div style="height:22px;background:var(--bd);border-radius:11px;overflow:hidden"><div id="bf" style="height:100%;width:0;background:var(--pr);transition:width .1s"></div></div>'
-    +'<div id="pd" style="display:flex;margin-top:12px;height:150px;border-radius:16px;background:var(--pr);color:#fff;align-items:center;justify-content:center;font-size:30px;font-weight:700;touch-action:manipulation;user-select:none;-webkit-user-select:none">🏃 달리려면 여기를 연타!</div>'
+    +'<div id="pd" style="display:flex;margin-top:12px;height:150px;border-radius:16px;background:var(--pr);color:#fff;align-items:center;justify-content:center;font-size:30px;font-weight:700;touch-action:none;user-select:none;-webkit-user-select:none">🏃 달리려면 여기를 연타!</div>'
     +'<p class="mu" id="pg" style="text-align:center;margin-top:10px"></p>';
    const T=(id,t)=>{const e=$(id);if(e&&e.textContent!==t)e.textContent=t};
    const myIdx=()=>{const a=g&&g.ord&&g.ord[c.team];return a?a.indexOf(c.uid):-1};
@@ -110,8 +111,13 @@ host(c){
     if(count>=LG()){count=LG();doneLeg=true;c.live(count,{lg:idx,done:1});try{navigator.vibrate([80,50,80,50,250])}catch(x){}}
     else if(now-lastLive>350){lastLive=now;c.live(count,{lg:idx})}
    };
-   const pd=$('#pd');
-   if(pd)pd.onpointerdown=e=>{e.preventDefault();step()};
+   if(window.PointerEvent){
+    c.ga.addEventListener('pointerdown',e=>{e.preventDefault();step()},{passive:false});
+   }else if('ontouchstart' in window){
+    c.ga.addEventListener('touchstart',e=>{e.preventDefault();step()},{passive:false});
+   }else{
+    c.ga.addEventListener('click',e=>{e.preventDefault();step()});
+   }
    c.every(()=>{
     if(!g||!g.ord)return;
     const idx=myIdx(),t=g.t0?NOW()-g.t0:-1,cu=g.cur?g.cur[c.team]:0,L=LG();
@@ -127,4 +133,10 @@ host(c){
  }
 });
 })();
+
+
+
+
+
+
 
