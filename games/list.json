@@ -18,5 +18,6 @@
  "elevator.js",
  "mental.js",
  "manse.js",
- "sos.js"
+ "sos.js",
+ "relay.js"
 ]
