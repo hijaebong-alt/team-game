@@ -100,7 +100,7 @@ const SHARE=location.href.split('#')[0];
 const firebaseConfig={apiKey:"AIzaSyChkhADYeWt6yo6t-hzgqkgABz6o5hIhTU",authDomain:"team-game-d27ac.firebaseapp.com",projectId:"team-game-d27ac",storageBucket:"team-game-d27ac.firebasestorage.app",messagingSenderId:"545379954707",appId:"1:545379954707:web:a73e5e50c4d0b4da254fe6"};
 const COL=[['빨강','#e24b4a'],['파랑','#378add'],['노랑','#c98f00'],['초록','#2f9e55']];
 const app=document.getElementById('app');
-let dataCb=null,resultsCb=null,db,uid,code=null,S=null,players=[],results=[],lastKey='',myName='',played={},stopGame=null,subs=[];
+let dataCb=null,lastGJ='',resultsCb=null,db,uid,code=null,S=null,players=[],results=[],lastKey='',myName='',played={},stopGame=null,subs=[];
 try{myName=localStorage.getItem('tg_name')||''}catch(e){}
 const gm=id=>GAMES.find(g=>g.id===id)||{id,name:id+' (불러오기 실패)',desc:'게임 파일을 불러오지 못했습니다.',hi:true,fmt:v=>v,run(c){c.ga.innerHTML='<p>이 게임을 불러오지 못했습니다. 진행자에게 알려 주세요.</p>'}};
 const esc=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML};
@@ -171,12 +171,13 @@ function render(soft){
  if(!S)return;
  const host=S.host===uid,my=S.teams[uid],ord=S.order||GAMES.map(g=>g.id);
  const key=[S.phase,S.gi,S.gs,S.n,S.rd,my,ord.join('|'),S.pm?1:0,S.at||0].join();
- if(key===lastKey&&S.gs==='play'){if(dataCb)dataCb(S.g);const c=$('#cnt');if(c)c.textContent=curResults().length+' / '+nTeamed();return}
+ if(key===lastKey&&S.gs==='play'){const gj=JSON.stringify(S.g||null);if(dataCb&&gj!==lastGJ){lastGJ=gj;dataCb(S.g)}      // 게임 데이터가 실제로 바뀔 때만 전달(다른 참가자의 제출 등으로 내 입력창이 지워지지 않도록)
+  const c=$('#cnt');if(c)c.textContent=curResults().length+' / '+nTeamed();return}
  if(soft&&key===lastKey&&S.phase==='lobby'){const l=$('#pl');if(l){l.innerHTML=plistH();$('#pn').textContent=players.length}if(host&&!dragging)drawBoard();return}
  lastKey=key;document.body.classList.toggle('pc',host);if(stopGame){stopGame();stopGame=null}
  const g=gm(ord[S.gi]);
  const menuH=(host&&S.phase==='game')?'<div class="card host"><p class="mu" style="margin:0 0 8px">진행자 메뉴</p><div class="row">'+(S.gs!=='result'?'<button id="sk">⏭ 이 게임 건너뛰기</button>':'')+'<button id="en">■ 게임 종료</button></div></div>':'';
- let h='<div class="mu">방 '+code+' · v18 · <a href="manual.html" target="_blank" rel="noopener" style="color:var(--pr)">📖 설명서</a>'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
+ let h='<div class="mu">방 '+code+' · v19 · <a href="manual.html" target="_blank" rel="noopener" style="color:var(--pr)">📖 설명서</a>'+(host?'<span class="badge">진행자</span>':' · 내 팀 '+tagH(my))+'</div>';
  if(S.phase==='lobby'){
   h+='<h1>대기실</h1>'+(host?'<div class="hl"><div>':'');
   if(host){
@@ -357,7 +358,7 @@ function runGame(){
  if(team==null){ga.innerHTML='<p>팀이 없어 이번 게임은 관전합니다.</p>';return}
  if(played[pk]){ga.innerHTML='<p class="big">제출 완료 ✓</p>';return}
  let timers=[],cl=[];const stop=()=>{timers.forEach(t=>{clearTimeout(t);clearInterval(t)});cl.forEach(f=>f());cl=[]};stopGame=stop;
- try{g.run({ga,stop,uid,team,live:(v,x)=>{db.doc('rooms/'+code+'/results/'+pk+'_'+uid).set(Object.assign({rd,gi,at,uid,team,v},x||{}))},watch:f=>{dataCb=f;cl.push(()=>{dataCb=null});f(S.g)},listen:(t,f)=>{window.addEventListener(t,f);cl.push(()=>window.removeEventListener(t,f))},
+ try{g.run({ga,stop,uid,team,live:(v,x)=>{db.doc('rooms/'+code+'/results/'+pk+'_'+uid).set(Object.assign({rd,gi,at,uid,team,v},x||{}))},watch:f=>{dataCb=f;lastGJ=JSON.stringify(S.g||null);cl.push(()=>{dataCb=null});f(S.g)},listen:(t,f)=>{window.addEventListener(t,f);cl.push(()=>window.removeEventListener(t,f))},
   ready:cb=>{ga.innerHTML=storyBox(g,false)+'<p class="mu" style="margin:0 0 4px">🎮 게임 방법</p><p style="margin-top:0">'+g.desc+'</p><button class="p w" id="rd">준비됐어요 (누르면 시작)</button>';$('#rd').onclick=cb},
   every:(f,ms)=>{const t=setInterval(f,ms);timers.push(t);return t},
   after:(f,ms)=>{const t=setTimeout(f,ms);timers.push(t);return t},
