@@ -79,7 +79,8 @@ registerGame({
    });
   };
   c.live(0);
-  c.watch(gg=>{
+  let wj='';c.watch(gg=>{const j=JSON.stringify(gg);if(j===wj)return;wj=j;   // 같은 데이터가 다시 와도 화면을 다시 그리지 않음(입력 중인 값 보호)
+   
    g=gg;
    const t=g&&g.teams&&g.teams[c.team];
    if(t){

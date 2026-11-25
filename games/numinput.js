@@ -119,7 +119,8 @@ registerGame({
    }
   };
   const finish=()=>{if(sent)return;sent=true;c.stop();c.submit(((g&&g.cnt&&g.cnt[c.uid])||0)*10)};
-  c.watch(gg=>{g=gg;if(g&&g.end){finish();return}
+  let wj='';c.watch(gg=>{const j=JSON.stringify(gg);if(j===wj)return;wj=j;   // 같은 데이터가 다시 와도 화면을 다시 그리지 않음(입력 중인 값 보호)
+   g=gg;if(g&&g.end){finish();return}
    if(g&&g.ph==='reveal'&&lastLiveR!==g.r){lastLiveR=g.r;c.live(myScore(),{r:g.r,ans:mine[g.r]==null?'':mine[g.r],k})}    // 정답 공개 때마다 내 점수 갱신
    draw()});
   c.every(()=>{
