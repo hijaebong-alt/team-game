@@ -35,8 +35,12 @@ registerGame({
   const finish=()=>{if(ended)return;ended=true;setHead('끝!');c.set(pub());draw()};
   c.set(pub());draw();
   let pre=PRE;setHead('시작까지 '+pre+'초');
-  const tk=c.every(()=>{pre--;if(pre>0){setHead('시작까지 '+pre+'초');return}
-   clearInterval(tk);started=true;t0=performance.now();c.set(pub());setHead(LIMIT+'초');draw();
+  let launched=false;
+  c.every(()=>{
+   if(launched||ended)return;
+   pre--;
+   if(pre>0){setHead('시작까지 '+pre+'초');return}
+   launched=true;started=true;t0=performance.now();c.set(pub());setHead(LIMIT+'초');draw();
    c.every(()=>{if(ended)return;const left=LIMIT-(performance.now()-t0)/1000;if(left<=0){finish();return}setHead(Math.ceil(left)+'초')},250);
   },1000);
   c.onResults(rs=>{
@@ -57,6 +61,7 @@ registerGame({
 
  /* ---- 참가자 화면 ---- */
  run(c){
+  c.ready(()=>{
   let g=null,k=0,lock=0,pi=0,pp=0,msg='',sent=false;
   const draw=()=>{
    if(!g){c.ga.innerHTML='<p class="mu" style="text-align:center">진행자 화면을 보세요. 곧 시작합니다.</p>';return}
@@ -72,13 +77,12 @@ registerGame({
    c.ga.querySelectorAll('[data-j]').forEach(b=>b.onclick=()=>{
     if(!g.started||g.end||Date.now()<lock)return;
     lock=Date.now()+450;k++;
-    c.live(0,{k,pn:t.m[+b.dataset.j].n,at:Date.now()});
+    c.live(k,{k,pn:t.m[+b.dataset.j].n,at:Date.now()});
     try{navigator.vibrate(30)}catch(x){}
     c.ga.querySelectorAll('[data-j]').forEach(z=>z.style.opacity='.4');
     c.after(()=>c.ga.querySelectorAll('[data-j]').forEach(z=>z.style.opacity=''),450);
    });
   };
-  c.live(0);
   let wj='';c.watch(gg=>{const j=JSON.stringify(gg);if(j===wj)return;wj=j;   // 같은 데이터가 다시 와도 화면을 다시 그리지 않음(입력 중인 값 보호)
    
    g=gg;
@@ -90,6 +94,7 @@ registerGame({
     if(g.end&&!sent&&t.m.findIndex(x=>x.id===c.uid)>=0){sent=true;c.submit(t.sc);return}
    }
    draw();
+  });
   });
  }
 });
