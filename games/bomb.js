@@ -21,14 +21,22 @@ registerGame({
   if(teams.size<2||roster.length<2){c.el.innerHTML='<p>폭탄을 주고받으려면 참가자가 있고 팀이 2개 이상이어야 합니다.</p>';return}
   let state=null,ended=false;
   const rosterIndex=new Map(roster.map((p,i)=>[p.id,i]));
+  const pickHolder=excludeId=>{
+   const pool=excludeId!=null?roster.filter(p=>p.id!==excludeId):roster;
+   const list=pool.length?pool:roster;
+   return list[Math.floor(Math.random()*list.length)];
+  };
   const initial=()=>{
+   ended=false;
    c.el.innerHTML='<div style="max-width:520px;margin:auto;text-align:center"><p class="big">💣 폭탄 돌리기 설정</p><label>폭탄 제한시간(초) <input id="fuse" type="number" min="5" max="180" value="30" style="width:90px"></label><br><br><label>반복 라운드 수 <input id="rounds" type="number" min="1" max="20" value="3" style="width:90px"></label><br><br><button id="start" style="height:48px;font-size:20px">게임 시작</button><p class="mu">시간이 끝날 때 폭탄을 가진 팀마다 폭발 1회가 기록됩니다.</p></div>';
    c.el.querySelector('#start').onclick=()=>{
     const fuse=Math.max(5,Math.min(180,Number(c.el.querySelector('#fuse').value)||30))*1000;
     const rounds=Math.max(1,Math.min(20,Math.floor(Number(c.el.querySelector('#rounds').value)||3)));
-    const first=roster[Math.floor(Math.random()*roster.length)];
-    state={phase:'running',players:roster,fuse,rounds,round:1,ver:1,holder:first,startedAt:NOW(),endsAt:NOW()+fuse,penalties:Array(c.n).fill(0),history:[]};
-    ended=false;c.set(state);drawHost();
+    const first=pickHolder(null);
+    const now=NOW();
+    ended=false;
+    state={phase:'running',players:roster,fuse,rounds,round:1,ver:1,holder:first,startedAt:now,endsAt:now+fuse,penalties:Array(c.n).fill(0),history:[]};
+    c.set(state);drawHost();
    };
   };
   const drawHost=()=>{
@@ -48,9 +56,16 @@ registerGame({
     +'</div>';
    updateClock();
    if(boom)c.el.querySelector('#next').onclick=()=>{
-    if(state.round>=state.rounds){state={...state,phase:'end',sc:state.penalties.slice()};ended=true;c.set(state);drawHost();return}
-    const prev=state.holder.id,choices=roster.filter(p=>p.id!==prev),first=choices[Math.floor(Math.random()*choices.length)];
-    state={...state,phase:'running',round:state.round+1,ver:state.ver+1,holder:first,startedAt:NOW(),endsAt:NOW()+state.fuse};c.set(state);drawHost();
+    if(!state||ended)return;
+    if(state.round>=state.rounds){
+     ended=true;
+     state={...state,phase:'end',sc:state.penalties.slice()};
+     c.set(state);drawHost();return;
+    }
+    const first=pickHolder(state.holder.id);
+    const now=NOW();
+    state={...state,phase:'running',round:state.round+1,ver:state.ver+1,holder:first,startedAt:now,endsAt:now+state.fuse};
+    c.set(state);drawHost();
    };
    if(state.phase==='end'){
     const e=c.el.querySelector('#phase');if(e)e.textContent='게임 종료 · 폭발 횟수가 적은 팀이 유리합니다. 결과를 공개하세요.';
@@ -61,26 +76,32 @@ registerGame({
    if(!state)return;
    const clock=c.el.querySelector('#clock');
    const bar=c.el.querySelector('#burn');
-   if(clock)clock.textContent=state.phase==='running'?fmtTime(state.endsAt-NOW()):state.phase==='exploded'?'00:00':'완료';
-   if(bar){const pct=state.phase==='running'?Math.max(0,Math.min(100,(state.endsAt-NOW())/state.fuse*100)):0;bar.style.width=pct+'%'}
+   const now=NOW();
+   if(clock)clock.textContent=state.phase==='running'?fmtTime(state.endsAt-now):state.phase==='exploded'?'00:00':'완료';
+   if(bar){const pct=state.phase==='running'?Math.max(0,Math.min(100,(state.endsAt-now)/state.fuse*100)):0;bar.style.width=pct+'%'}
   };
   const lastSeq={};
   c.onResults(rs=>{
-   if(!state||state.phase!=='running')return;
+   if(!state||ended||state.phase!=='running'||!Array.isArray(rs))return;
    for(const r of rs){
-    if(typeof r.v!=='number'||r.v<=(lastSeq[r.uid]||0))continue;
+    if(!r||typeof r.v!=='number'||r.v<=(lastSeq[r.uid]||0))continue;
     lastSeq[r.uid]=r.v;
     if(r.uid!==state.holder.id||r.round!==state.round||r.ver!==state.ver)continue;
+    if(NOW()>=state.endsAt)continue;
     const to=rosterIndex.get(r.to),target=to==null?null:roster[to];
     if(!target||target.team===state.holder.team)continue;
-    state={...state,holder:target,ver:state.ver+1};c.set(state);drawHost();break;
+    state={...state,holder:target,ver:state.ver+1};
+    c.set(state);drawHost();break;
    }
   });
   c.every(()=>{
-   if(!state){return}
+   if(!state||ended)return;
    if(state.phase==='running'&&NOW()>=state.endsAt){
-    state.penalties[state.holder.team]=(state.penalties[state.holder.team]||0)+1;
-    state={...state,phase:'exploded'};c.set(state);drawHost();return;
+    const nextPenalties=state.penalties.slice();
+    const t=state.holder.team;
+    nextPenalties[t]=(nextPenalties[t]||0)+1;
+    state={...state,phase:'exploded',penalties:nextPenalties};
+    c.set(state);drawHost();return;
    }
    updateClock();
   },100);
@@ -89,16 +110,35 @@ registerGame({
 
  run(c){
   c.ready(()=>{
-   let g=null,seq=0,sent=false,pending=false,pendingAt=0;
+   let g=null,seq=0,sent=false,pending=false,pendingAt=0,lastRound=0,lastVer=0,lastPhase='',lastHolderId='';
    c.ga.style.touchAction='none';c.ga.style.userSelect='none';c.ga.style.webkitUserSelect='none';
-   c.watch(gg=>{g=gg;draw();if(g&&g.phase==='end'&&!sent){sent=true;c.stop();c.submit(g.sc[c.team]||0)}});
-   const me=()=>g&&g.players.find(p=>p.id===c.uid);
+   const submitEnd=()=>{
+    if(sent||!g||g.phase!=='end')return;
+    sent=true;
+    const score=Array.isArray(g.sc)?(g.sc[c.team]||0):0;
+    c.stop();
+    c.submit(score);
+   };
+   c.watch(gg=>{
+    if(!gg)return;
+    const roundChanged=gg.round!==lastRound||gg.ver!==lastVer||gg.phase!==lastPhase;
+    const holderChanged=gg.holder&&gg.holder.id!==lastHolderId;
+    g=gg;
+    if(roundChanged||holderChanged)pending=false;
+    lastRound=gg.round||0;
+    lastVer=gg.ver||0;
+    lastPhase=gg.phase||'';
+    lastHolderId=(gg.holder&&gg.holder.id)||'';
+    draw();
+    submitEnd();
+   });
    const owned=()=>!!(g&&g.phase==='running'&&g.holder&&g.holder.id===c.uid&&NOW()>=g.startedAt&&NOW()<g.endsAt&&!pending);
    const draw=()=>{
     if(!g){c.ga.innerHTML='<p class="mu">진행자가 게임을 시작하면 화면에 폭탄이 표시됩니다.</p>';return}
-    const mine=g.phase==='running'&&g.holder.id===c.uid;
-    const targets=g.players.map((p,i)=>({p,i})).filter(x=>x.p.team!==c.team);
-    const status=g.phase==='end'?'게임이 끝났어요.':g.phase==='exploded'?'💥 폭탄이 터졌어요! 다음 라운드를 기다리세요.':mine?(pending?'폭탄 전달 중…':'내가 폭탄을 들고 있어요. 다른 팀 이름을 눌러 넘기세요.'):'폭탄 보유자: '+teamName(g.holder.team)+' 팀 · '+g.holder.name;
+    const mine=g.phase==='running'&&g.holder&&g.holder.id===c.uid;
+    const targets=(g.players||[]).map((p,i)=>({p,i})).filter(x=>x.p.team!==c.team);
+    const holderLabel=g.holder?(teamName(g.holder.team)+' 팀 · '+g.holder.name):'미정';
+    const status=g.phase==='end'?'게임이 끝났어요.':g.phase==='exploded'?'💥 폭탄이 터졌어요! 다음 라운드를 기다리세요.':mine?(pending?'폭탄 전달 중…':'내가 폭탄을 들고 있어요. 다른 팀 이름을 눌러 넘기세요.'):'폭탄 보유자: '+holderLabel;
     c.ga.innerHTML='<style>@keyframes bombPulse{0%{transform:scale(.92) rotate(-5deg)}100%{transform:scale(1.08) rotate(5deg)}} .bombPulse{display:inline-block;animation:bombPulse .45s infinite alternate}</style>'
      +'<div style="text-align:center"><p class="big" style="margin:0">폭탄 돌리기 · '+g.round+' / '+g.rounds+' 라운드</p>'
      +'<div id="pBomb" class="bombPulse" style="font-size:58px;margin:5px">💣<span style="font-size:27px">🔥</span></div>'
@@ -120,21 +160,26 @@ registerGame({
     }else{if(clock)clock.textContent=g.phase==='exploded'?'💥 00:00':'완료';if(bar)bar.style.width='0%'}
    };
    const pass=e=>{
-    const b=e.target.closest&&e.target.closest('[data-to]');if(!b)return;
-    e.preventDefault();if(!owned())return;
+    const b=e.target&&e.target.closest?e.target.closest('[data-to]'):null;if(!b)return;
+    e.preventDefault();if(!owned()||!g||!Array.isArray(g.players))return;
     const to=Number(b.dataset.to),target=g.players[to];if(!target||target.team===c.team)return;
     pending=true;pendingAt=performance.now();
     c.live(++seq,{to:target.id,round:g.round,ver:g.ver});
     const s=c.ga.querySelector('#pStatus');if(s)s.textContent='폭탄을 '+target.name+'에게 전달 중…';
-    c.ga.querySelectorAll('[data-to]').forEach(x=>x.disabled=true);
+    c.ga.querySelectorAll('[data-to]').forEach(x=>{x.disabled=true;x.style.opacity='.65'});
    };
    c.ga.addEventListener('pointerdown',pass,{passive:false});
    c.every(()=>{
-    if(pending&&g&&g.holder&&g.holder.id!==c.uid)pending=false;
+    if(!g)return;
+    if(pending&&g.holder&&g.holder.id!==c.uid){pending=false;draw()}
     else if(pending&&performance.now()-pendingAt>1200){pending=false;draw()}
-    if(g){updatePlayerClock();if(pending&&g.holder&&g.holder.id===c.uid){const s=c.ga.querySelector('#pStatus');if(s)s.textContent='아직 전달되지 않았어요. 이름을 다시 눌러 주세요.'}}
+    updatePlayerClock();
+    if(pending&&g.holder&&g.holder.id===c.uid){const s=c.ga.querySelector('#pStatus');if(s)s.textContent='아직 전달되지 않았어요. 이름을 다시 눌러 주세요.'}
    },100);
   });
  }
 });
 })();
+```[cite: 1]
+
+원하시면 **폭발 사운드/진동 효과 추가**, **같은 팀 간 폭탄 전달 옵션**, **연속 같은 대상 전달 방지(핑퐁 방지)** 같은 규칙 개선도 이어서 해드릴 수 있습니다. 어떤 기능을 추가하거나 다듬고 싶으신가요?
