@@ -187,22 +187,6 @@ registerGame({
     c.stop();
     c.submit(score);
    };
-   c.watch(gg=>{
-    if(!gg)return;
-    const roundChanged=gg.round!==lastRound||gg.ver!==lastVer||gg.phase!==lastPhase;
-    const holderChanged=gg.holder&&gg.holder.id!==lastHolderId;
-    const explodedNow=gg.phase==='exploded'&&lastPhase!=='exploded';
-    const wasMineBeforeBoom=explodedNow&&lastHolderId===c.uid;
-    g=gg;
-    if(roundChanged||holderChanged)pending=false;
-    if(wasMineBeforeBoom)vibrate([140,60,140,60,320]);
-    lastRound=gg.round||0;
-    lastVer=gg.ver||0;
-    lastPhase=gg.phase||'';
-    lastHolderId=(gg.holder&&gg.holder.id)||'';
-    draw();
-    submitEnd();
-   });
    const isCandidateForMe=p=>{
     if(!g||!p||p.id===c.uid)return false;
     if(!g.allowSameTeam&&p.team===c.team)return false;
@@ -250,6 +234,22 @@ registerGame({
     c.ga.querySelectorAll('[data-to]').forEach(x=>{x.disabled=true;x.style.opacity='.65'});
    };
    c.ga.addEventListener('pointerdown',pass,{passive:false});
+   c.watch(gg=>{
+    if(!gg)return;
+    const roundChanged=gg.round!==lastRound||gg.ver!==lastVer||gg.phase!==lastPhase;
+    const holderChanged=gg.holder&&gg.holder.id!==lastHolderId;
+    const explodedNow=gg.phase==='exploded'&&lastPhase!=='exploded';
+    const wasMineBeforeBoom=explodedNow&&lastHolderId===c.uid;
+    g=gg;
+    if(roundChanged||holderChanged)pending=false;
+    if(wasMineBeforeBoom)vibrate([140,60,140,60,320]);
+    lastRound=gg.round||0;
+    lastVer=gg.ver||0;
+    lastPhase=gg.phase||'';
+    lastHolderId=(gg.holder&&gg.holder.id)||'';
+    draw();
+    submitEnd();
+   });
    c.every(()=>{
     if(!g)return;
     if(pending&&g.holder&&g.holder.id!==c.uid){pending=false;draw()}
