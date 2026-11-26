@@ -6,14 +6,14 @@ registerGame({
  order:18,
  name:'암산 게임',
  story:'AI의 계산 회로가 숫자 자물쇠로 잠겨 있습니다. 계산기 없이 머릿속으로 풀어내는 인간의 암산만이 자물쇠를 열 수 있습니다. 팀원 모두가 힘을 모아 한 문제라도 더 많이 풀어 AI의 회로를 무너뜨리세요!',
- desc:'진행자 화면에 덧셈·곱셈 문제가 나옵니다. 계산기 없이 머릿속으로 풀어 내 폰에 정답을 입력하세요. 10문제이며 뒤로 갈수록 어려워집니다. 한 문제에 답은 한 번만 제출할 수 있습니다. 진행자 화면에는 팀별로 맞힌 사람 수가 표시되고, 팀원 평균 정답 수가 많은 팀이 승리합니다. (높을수록 좋음)',
+ desc:'진행자 화면에 덧셈·뺄셈·곱셈 문제가 나옵니다. 계산기 없이 머릿속으로 풀어 내 폰에 정답을 입력하세요. 6문제이며 뒤로 갈수록 어려워집니다. 한 문제에 답은 한 번만 제출할 수 있습니다. 진행자 화면에는 팀별로 맞힌 사람 수가 표시되고, 팀원 평균 정답 수가 많은 팀이 승리합니다. (높을수록 좋음)',
  hi:true,
  fmt:v=>(v/10).toFixed(2)+'개 정답',
 
  /* ---- 진행자 화면: 문제 + 팀별 맞힌 사람 수 ---- */
  host(c){
   if(!c.onResults){c.el.innerHTML='<p style="color:#e24b4a">index.html이 예전 버전입니다. 최신 index.html을 올린 뒤 Ctrl+F5로 새로고침하세요.</p>';return}
-  const ROUNDS=10,PRE=6,COUNT=3000,JUDGE=2000,REVEAL=4500;      // 문제 수, 시작 전(초), 문제 나오기 전 카운트다운, 정답 공개 전 대기, 정답 보여 주는 시간(ms)
+  const ROUNDS=6,PRE=6,COUNT=3000,JUDGE=2000,REVEAL=4500;      // 문제 수, 시작 전(초), 문제 나오기 전 카운트다운, 정답 공개 전 대기, 정답 보여 주는 시간(ms)
   const SHOW_ON_PHONE=false;                                   // true면 참가자 폰에도 문제를 함께 보여 줌
   const COL=['#e24b4a','#378add','#c98f00','#2f9e55'],TN=['빨강','파랑','노랑','초록'];
   const mem=c.players.filter(p=>p.team!=null&&p.team<c.n);
@@ -22,16 +22,20 @@ registerGame({
   const cnt={},seen={};mem.forEach(p=>cnt[p.id]=0);
   let ans={},okSet={},round=-1,prob=null,phase='wait',open=false,dl=0,curSpan=COUNT,tAsk=0;
   const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
-  const gen=r=>{                                               // 라운드가 갈수록 어려워지는 덧셈·곱셈 (홀수 번째 라운드는 곱셈)
-   const tier=r<3?0:r<6?1:2,mul=r%2===1;let q,a,ms;
-   if(!mul){
-    if(tier===0){const x=rnd(11,59),y=rnd(11,59);q=x+' + '+y;a=x+y;ms=10000}
-    else if(tier===1){const x=rnd(101,499),y=rnd(101,499);q=x+' + '+y;a=x+y;ms=14000}
-    else{const x=rnd(21,89),y=rnd(21,89),z=rnd(21,89);q=x+' + '+y+' + '+z;a=x+y+z;ms=16000}
-   }else{
+  const gen=r=>{                                               // 6문제 동안 덧셈·뺄셈·곱셈을 모두 출제
+   const tier=Math.floor(r/2),op=['+','-','×'][r%3];let q,a,ms;
+   if(op==='×'){
     if(tier===0){const x=rnd(3,9),y=rnd(6,15);q=x+' × '+y;a=x*y;ms=10000}
     else if(tier===1){const x=rnd(6,9),y=rnd(12,25);q=x+' × '+y;a=x*y;ms=14000}
     else{const x=rnd(6,9),y=rnd(26,49);q=x+' × '+y;a=x*y;ms=18000}
+   }else if(tier===0){
+    let x=rnd(11,59),y=rnd(11,59);if(op==='-'&&x<y)[x,y]=[y,x];q=x+' '+op+' '+y;a=op==='+'?x+y:x-y;ms=10000
+   }else if(tier===1){
+    let x=rnd(101,499),y=rnd(101,499);if(op==='-'&&x<y)[x,y]=[y,x];q=x+' '+op+' '+y;a=op==='+'?x+y:x-y;ms=14000
+   }else if(op==='+'){
+    const x=rnd(21,89),y=rnd(21,89),z=rnd(21,89);q=x+' + '+y+' + '+z;a=x+y+z;ms=16000
+   }else{
+    let x=rnd(301,899),y=rnd(301,899);if(x<y)[x,y]=[y,x];q=x+' - '+y;a=x-y;ms=16000
    }
    return{q,a,ms};
   };
