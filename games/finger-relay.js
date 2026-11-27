@@ -1,14 +1,14 @@
-/* 손가락 이어달리기: 팀별 주자가 화면을 70회 터치해 바통을 이어 달리는 게임. 진행자 화면에 이어달리기 모습이 나옴 */
+/* 손가락 이어달리기: 팀별 주자가 화면을 100회 터치해 바통을 이어 달리는 게임. 진행자 화면에 이어달리기 모습이 나옴 */
 (function(){
 const NOW=()=>typeof serverNow==='function'?serverNow():Date.now();
-const LEG=70;                                   // 한 주자가 달리는 구간: 화면 터치 횟수
+const LEG=100;                                   // 한 주자가 달리는 구간: 화면 터치 횟수
 const fmtT=ms=>{const s=Math.round(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
 registerGame({
  id:'finger-relay',                              // 파일 이름(finger-relay.js)과 같아야 합니다
  order:22,
  name:'손가락 이어달리기',
  story:'AI가 인류의 모든 이동 경로를 봉쇄했습니다. 구조 요청이 담긴 비밀 바통을 다음 기지까지 사람의 힘으로 이어 달려 전달해야 합니다! 화면을 빠르게 터치해 다음 주자에게 바통을 넘기고, 팀 전체가 AI의 봉쇄를 뚫으세요.',
- desc:'팀마다 같은 수의 주자(가장 적은 팀의 인원수)가 순서대로 달립니다. 내 차례가 되면 폰 화면의 달리기 영역을 70번 터치하세요. 70번 터치하면 자동으로 다음 주자에게 바통이 넘어갑니다. 진행자 화면에서 이어달리기 모습이 보이고, 마지막 주자까지 가장 먼저 들어온 팀이 승리합니다. 제한시간 안에 완주하지 못하면 달린 거리로 비교합니다. 순서를 기다리는 동안과 쉬는 사람은 응원해 주세요. (높을수록 좋음)',
+ desc:'팀마다 같은 수의 주자(가장 적은 팀의 인원수)가 순서대로 달립니다. 내 차례가 되면 폰 화면의 달리기 영역을 100번 터치하세요. 100번 터치하면 자동으로 다음 주자에게 바통이 넘어갑니다. 진행자 화면에서 이어달리기 모습이 보이고, 마지막 주자까지 가장 먼저 들어온 팀이 승리합니다. 제한시간 안에 완주하지 못하면 달린 거리로 비교합니다. 순서를 기다리는 동안과 쉬는 사람은 응원해 주세요. (높을수록 좋음)',
  hi:true,
  fmt:v=>v>=100000?'완주 '+fmtT((1000000-v)*10):'진행 '+(v/10).toFixed(1)+'%',
 
@@ -22,7 +22,7 @@ registerGame({
   if(!(K>=1)){c.el.innerHTML='<p>모든 팀에 참가자가 1명 이상 있어야 합니다. 대기실에서 팀을 다시 배정하세요.</p>';return}
   const shuf=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);
   const run=teams.map(m=>shuf(m).slice(0,K));                 // 팀별 주자 순서 (인원이 많은 팀은 K명만 달리고 나머지는 응원)
-  const LIMIT=Math.max(90,K*45)*1000;                         // 제한시간(ms): 한 구간 70번 터치는 보통 10~20초
+  const LIMIT=Math.max(90,K*45)*1000;                         // 제한시간(ms): 한 구간 100번 터치는 보통 10~20초
   const t0=NOW()+PRE*1000;
   const cur=run.map(()=>0),fin=run.map(()=>0),cnt=run.map(m=>m.map(()=>0));
   let ended=false;
@@ -93,14 +93,14 @@ registerGame({
   },200);
  },
 
- /* ---- 참가자 화면: 내 차례에 화면을 70회 터치 ---- */
+ /* ---- 참가자 화면: 내 차례에 화면을 100회 터치 ---- */
  run(c){
   // 준비 버튼 없이 바로 시작: 준비 버튼을 누르지 않은 주자는 자기 차례가 와도 터치가 세어지지 않아 팀 전체가 멈추기 때문
   let g=null,count=0,doneLeg=false,wasActive=false,sent=false,lastLive=-1000;
   c.ga.style.touchAction='none';c.ga.style.userSelect='none';c.ga.style.webkitUserSelect='none';
   c.ga.innerHTML='<p class="mu" id="st" style="text-align:center">진행자 화면을 보세요!</p><p class="big" id="ct" style="margin:2px 0">…</p>'
    +'<div style="height:22px;background:var(--bd);border-radius:11px;overflow:hidden"><div id="bf" style="height:100%;width:0;background:var(--pr);transition:width .08s"></div></div>'
-   +'<div id="pd" style="display:flex;margin-top:12px;height:240px;border-radius:20px;background:#3a3c40;color:#fff;align-items:center;justify-content:center;text-align:center;font-size:30px;font-weight:700;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none">대기 중</div>'
+   +'<div id="pd" style="display:flex;margin-top:12px;height:240px;border-radius:20px;background:#3a3c40;color:#fff;align-items:center;justify-content:center;text-align:center;font-size:30px;font-weight:1000;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none">대기 중</div>'
    +'<p class="mu" id="pg" style="text-align:center;margin-top:10px"></p>';
   const T=(id,t)=>{const e=$(id);if(e&&e.textContent!==t)e.textContent=t};
   const myIdx=()=>{const a=g&&g.ord&&g.ord[c.team];return a?a.indexOf(c.uid):-1};
