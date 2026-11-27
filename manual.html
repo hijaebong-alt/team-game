@@ -29,8 +29,8 @@ table{width:100%;border-collapse:collapse;font-size:15px}td,th{border:1px solid 
 @media print{.nav,.noprint{display:none}body{background:#fff;color:#000}.card,.hero{break-inside:avoid}.hero,.story{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body><div class="wrap">
 
-<div class="hero"><h1>📖 팀 미니게임 설명서</h1><p>AI 시대, 인간이 힘을 모아 이겨내는 팀 대항 게임 — 진행 방법과 게임별 규칙</p></div>
-<div class="nav noprint"><a class="btn p" href="./">← 게임 화면으로</a> <a class="btn" onclick="window.print()">🖨️ 인쇄</a></div>
+<div class="hero"><h1 id="hh">📖 팀 미니게임 설명서</h1><p id="hp">AI 시대, 인간이 힘을 모아 이겨내는 팀 대항 게임 — 진행 방법과 게임별 규칙</p></div>
+<div class="nav noprint"><a class="btn p" href="./">← 첫 화면(테마 선택)으로</a> <a class="btn" onclick="window.print()">🖨️ 인쇄</a></div>
 
 <h2>1. 시작하기 전에</h2>
 <div class="card">
@@ -47,7 +47,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}td,th{border:1px solid 
  <h3>진행자</h3>
  <ol>
   <li><b>새 방 만들기</b>를 누르면 QR코드와 4자리 방 코드가 나옵니다.</li>
-  <li>참가자가 입장하면 이름이 나타납니다. <b>팀 수(2~4팀)</b>를 고른 뒤 참가자 이름표를 원하는 팀 칸으로 끌어 놓아 직접 배정할 수 있습니다. <b>미배정</b> 칸에 놓으면 배정이 해제됩니다. <b>무작위 팀 배정</b>으로 섞는 기능도 있습니다.</li>
+  <li>참가자가 입장하면 이름이 나타납니다. <b>팀 수(2~4팀)</b>를 고르고 <b>무작위 팀 배정</b>을 누릅니다. 마음에 안 들면 다시 섞을 수 있습니다.</li>
   <li><b>게임 순서</b> 목록에서 ☰ 을 끌어서 순서를 바꾸고, 이번에 하지 않을 게임은 ✕ 로 뺍니다. 각 게임의 <b>시범</b> 체크를 풀면 연습 없이 바로 본 게임을 합니다.</li>
   <li><b>게임 시작</b>을 누르면 오프닝이 나온 뒤 첫 번째 게임 안내가 나옵니다.</li>
   <li>각 게임에서 <b>시범 게임</b>으로 연습한 뒤(몇 번이든 가능) <b>본 게임</b>을 시작합니다.</li>
@@ -95,6 +95,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}td,th{border:1px solid 
 <p class="mu" style="text-align:center;margin:24px 0 8px">이 설명서는 게임 화면의 "📖 설명서" 링크에서 언제든 다시 열 수 있습니다.</p>
 </div>
 
+<script src="themes.js"></script>
 <script>
 /* 게임 파일(games/*.js)의 이름·상황·방법을 읽어 설명서를 자동으로 만듭니다 */
 const GAMES=[],loaded={};
@@ -103,6 +104,9 @@ function askMotion(){return Promise.resolve(false)}
 function shakeGame(id,name,axis,lab,desc){return{id,name,desc}}    // 센서 게임 도우미(설명서에서는 이름·설명만 사용)
 function registerGame(g){const i=GAMES.findIndex(x=>x.id===g.id);if(i>=0)GAMES[i]=g;else GAMES.push(g);
  GAMES.sort((a,b)=>(a.order==null?999:a.order)-(b.order==null?999:b.order)||String(a.name).localeCompare(b.name,'ko'))}
+const THEME_ID=new URLSearchParams(location.search).get('theme')||'';
+const TDEF=(window.THEMES&&window.THEMES[THEME_ID])||null;
+const storyOf=g=>{if(!TDEF||THEME_ID==='ai')return g.story;const st=window.STORIES&&window.STORIES[THEME_ID];return(st&&st[g.id])||(window.THEME_FALLBACK&&window.THEME_FALLBACK[THEME_ID])||g.story};
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 function loadGame(id){return loaded[id]||(loaded[id]=new Promise(res=>{const el=document.createElement('script');el.src='games/'+id+'.js?v='+Date.now();el.onload=()=>res(true);el.onerror=()=>res(false);document.head.appendChild(el)}))}
 async function listIds(){
@@ -114,11 +118,17 @@ async function listIds(){
  const ids=await listIds();await Promise.all(ids.map(loadGame));
  const box=document.getElementById('games');
  if(!GAMES.length){box.innerHTML='<div class="card mu">게임 목록을 불러오지 못했습니다. 잠시 후 새로고침해 주세요.</div>';return}
- document.getElementById('cnt').textContent='(총 '+GAMES.length+'종)';
- document.getElementById('toc').innerHTML=GAMES.map((g,i)=>'<a href="#g'+(i+1)+'">'+(i+1)+'. '+esc(g.name)+'</a>').join('');
- box.innerHTML=GAMES.map((g,i)=>'<div class="card" id="g'+(i+1)+'"><h3><span class="no">'+(i+1)+'</span>'+esc(g.name)+(typeof g.host==='function'?'<span class="badge">📺 진행자 화면 연동</span>':'')+'</h3>'
-  +(g.story?'<div class="story"><b>📡 상황</b><div>'+esc(g.story)+'</div></div>':'')
+ if(TDEF){   // 선택한 테마가 있으면 그 테마의 게임을 앞쪽에, 테마 순서대로 보여 줌
+  const rank=g=>{const i=(TDEF.games||[]).indexOf(g.id);return i<0?1000:i};
+  GAMES.sort((a,b)=>rank(a)-rank(b));
+  const hh=document.getElementById('hh'),hp=document.getElementById('hp');
+  if(hh)hh.textContent='📖 '+TDEF.emoji+' '+TDEF.title+' · 게임 설명서';if(hp)hp.textContent=TDEF.sub||'';
+ }
+ document.getElementById('cnt').textContent='(총 '+GAMES.length+'종'+(TDEF?' · 이 테마 '+GAMES.filter(g=>(TDEF.games||[]).includes(g.id)).length+'종':'')+')';
+ document.getElementById('toc').innerHTML=GAMES.map((g,i)=>'<a href="#g-'+esc(g.id)+'">'+(i+1)+'. '+esc(g.name)+'</a>').join('');
+ box.innerHTML=GAMES.map((g,i)=>'<div class="card" id="g-'+esc(g.id)+'"><h3><span class="no">'+(i+1)+'</span>'+esc(g.name)+(typeof g.host==='function'?'<span class="badge">📺 진행자 화면 연동</span>':'')+(TDEF&&(TDEF.games||[]).includes(g.id)?'<span class="badge" style="background:#2f9e55">이 테마</span>':'')+'</h3>'
+  +(storyOf(g)?'<div class="story"><b>📡 상황</b><div>'+esc(storyOf(g))+'</div></div>':'')
   +'<div class="how"><b>🎮 게임 방법</b><div>'+esc(g.desc)+'</div></div></div>').join('');
- if(location.hash){const e=document.querySelector(location.hash);if(e)e.scrollIntoView()}
+ if(location.hash){const e=document.getElementById(decodeURIComponent(location.hash.slice(1)));if(e)e.scrollIntoView()}
 })();
 </script></body></html>
